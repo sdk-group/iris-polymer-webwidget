@@ -6,12 +6,13 @@
 <link rel="import" href="../paper-button/paper-button.html">
 <link rel="import" href="../iron-list/iron-list.html">
 <link rel="import" href="../iron-icons/iron-icons.html">
-<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
 
 <link rel="import" href="../re-captcha/re-captcha.html">
 
 <link rel="import" href="../iris-polymer-date-picker/iris-date-picker.html">
 <link rel="import" href="iris-stepper.html">
+<link rel="import" href="iris-counter.html">
 
 <dom-module id="iris-webwidget">
   <template>
@@ -19,82 +20,89 @@
       :host {
         display: block;
       }
+      
+      .webwidget-page paper-button {
+        float: right;
+      }
     </style>
     <div id="loader">
       <paper-spinner active></paper-spinner>
     </div>
 
-    <div id="webterminals-list">
-      <paper-input label="" value="{{ofilter}}"></paper-input>
-      <iron-list items="[[filterList(webterminals,ofilter)]]" as="item">
-        <template>
-          <div>
-            [[item.label]]
-          </div>
-        </template>
-      </iron-list>
-      <paper-button raised>Далее</paper-button>
-    </div>
-
-    <div id="service-groups-list">
-      <paper-input label="" value="{{sgfilter}}"></paper-input>
-      <iron-list items="[[filterList(servicegroups,sgfilter)]]" as="item">
-        <template>
-          <div>
-            [[item.label]]
-          </div>
-        </template>
-      </iron-list>
-      <paper-button raised>Назад</paper-button>
-      <paper-button raised>Далее</paper-button>
-    </div>
-
-    <div id="client-fields">
-      <div id="service-count">
-        <paper-icon-button icon="chevron-left" on-tap="decServiceCount"></paper-icon-button>
-        <paper-input readonly label="Количество услуг" value="{{serviceCount}}"></paper-input>
-        <paper-icon-button icon="chevron-right" on-tap="incServiceCount"></paper-icon-button>
-        <paper-button raised>Назад</paper-button>
-        <paper-button raised>Далее</paper-button>
-      </div>
-
-      <div id="calendar">
-        <iris-date-picker></iris-date-picker>
-        <paper-button raised>Назад</paper-button>
-        <paper-button raised>Далее</paper-button>
-      </div>
-
-      <div id="slot-picker">
-        <iron-list items="[[slots]]" as="item">
+    <iron-pages selected="[[selected]]">
+      <div class="webwidget-page" id="webterminals-list">
+        <paper-input label="Название офиса" value="{{ofilter}}"></paper-input>
+        <iron-list items="[[filterList(webterminals,ofilter)]]" as="item">
           <template>
             <div>
               [[item.label]]
             </div>
           </template>
         </iron-list>
-        <paper-button raised>Назад</paper-button>
-        <paper-button raised>Далее</paper-button>
+        <paper-button on-tap="nextPage" raised>Далее</paper-button>
       </div>
 
-      <div id="fio-fields">
-        <paper-input label="Фамилия" value="{{clientSurname}}"></paper-input>
-        <paper-input label="Имя" value="{{clientName}}"></paper-input>
-        <paper-input label="Отчество" vakue="{{clientPatronymic}}"></paper-input>
-        <paper-button raised>Назад</paper-button>
-        <paper-button raised>Далее</paper-button>
+      <div class="webwidget-page" id="service-groups-list">
+        <paper-input label="Название услуги" value="{{sgfilter}}"></paper-input>
+        <iron-list items="[[filterList(servicegroups,sgfilter)]]" as="item">
+          <template>
+            <div>
+              [[item.label]]
+            </div>
+          </template>
+        </iron-list>
+        <paper-button on-tap="nextPage" raised>Далее</paper-button>
+        <paper-button on-tap="previousPage" raised>Назад</paper-button>
       </div>
 
-    </div>
+      <div class="webwidget-page" id="client-fields">
+        <iron-pages selected="[[selectedField]]">
+          <div id="service-count">
+            <iris-counter count="{{serviceCount}}"></iris-counter>
 
-    <div id="captcha">
-      <re-captcha sitekey="6LceSiITAAAAAMroOv8D8KjDqlpfwCjQBtLj9xQA" response="{{captchaResponse}}"></re-captcha>
-      <paper-button raised>Назад</paper-button>
-      <paper-button raised>Далее</paper-button>
-    </div>
+            <paper-button on-tap="nextField" raised>Далее</paper-button>
+            <paper-button on-tap="previousPage" raised>Назад</paper-button>
+          </div>
 
-    <div id="info">
-      <paper-button raised>Ок</paper-button>
-    </div>
+          <div id="calendar">
+            <iris-date-picker></iris-date-picker>
+            <paper-button on-tap="nextField" raised>Далее</paper-button>
+            <paper-button on-tap="previousField" raised>Назад</paper-button>
+          </div>
+
+          <div id="slot-picker">
+            <iron-list items="[[slots]]" as="item">
+              <template>
+                <div>
+                  [[item.label]]
+                </div>
+              </template>
+            </iron-list>
+            <paper-button on-tap="nextField" raised>Далее</paper-button>
+            <paper-button on-tap="previousField" raised>Назад</paper-button>
+          </div>
+
+          <div id="fio-fields">
+            <paper-input label="Фамилия" value="{{clientSurname}}"></paper-input>
+            <paper-input label="Имя" value="{{clientName}}"></paper-input>
+            <paper-input label="Отчество" vakue="{{clientPatronymic}}"></paper-input>
+            <paper-button on-tap="nextPage" raised>Далее</paper-button>
+            <paper-button on-tap="previousField" raised>Назад</paper-button>
+          </div>
+        </iron-pages>
+
+      </div>
+
+      <div class="webwidget-page" id="captcha">
+        <re-captcha sitekey="6LceSiITAAAAAMroOv8D8KjDqlpfwCjQBtLj9xQA" response="{{captchaResponse}}"></re-captcha>
+        <paper-button on-tap="nextPage" raised>Далее</paper-button>
+        <paper-button on-tap="previousPage" raised>Назад</paper-button>
+      </div>
+
+      <div class="webwidget-page" id="info">
+        <paper-button raised>Ок</paper-button>
+      </div>
+    </iron-pages>
 
   </template>
   <script>
@@ -107,6 +115,12 @@
       },
       ready() {
         this.webterminals = [{
+          label: "Веб терминал 1"
+        }, {
+          label: "Веб терминал 2"
+        }, {
+          label: "Веб терминал 3"
+        }, {
           label: "Веб терминал 1"
         }, {
           label: "Веб терминал 2"
@@ -134,20 +148,27 @@
 
         this.serviceCount = 0;
         this.max = 10;
-        console.log('WOLOLO');
+        this.selected = 0;
+        this.selectedField = 0;
       },
-      incServiceCount() {
-        if (this.serviceCount < this.max) this.serviceCount++;
-        console.log(this.captchaResponse);
-      },
-      decServiceCount() {
-        if (this.serviceCount > 0) this.serviceCount--;
-      },
+
       filterList(webterminals, ofilter) {
         if (!ofilter) return webterminals;
         let result = [];
         webterminals.forEach(t => ~t.label.indexOf(ofilter) && result.push(t))
         return result;
+      },
+      nextPage() {
+        this.selected++;
+      },
+      previousPage() {
+        this.selected--;
+      },
+      nextField() {
+        this.selectedField++;
+      },
+      previousField() {
+        this.selectedField--;
       }
     });
   </script>

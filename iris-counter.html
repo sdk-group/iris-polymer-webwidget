@@ -1,0 +1,44 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-input/paper-input.html">
+
+<dom-module id="iris-counter">
+  <template>
+    <style>
+      :host {
+        display: flex;
+        flex-direction: row;
+      }
+      
+      paper-icon-button {
+        width: 50px;
+        height: 50px;
+      }
+    </style>
+    <paper-icon-button icon="chevron-left" on-tap="decServiceCount"></paper-icon-button>
+    <paper-input readonly label="Количество услуг" value="{{count}}"></paper-input>
+    <paper-icon-button icon="chevron-right" on-tap="incServiceCount"></paper-icon-button>
+  </template>
+  <script>
+    Polymer({
+      is: 'iris-counter',
+      properties: {
+        count: {
+          type: Number,
+          value: 0
+        },
+        max: {
+          type: Number,
+          value: 10
+        }
+      },
+      incServiceCount() {
+        if (this.count < this.max) this.count++;
+      },
+      decServiceCount() {
+        if (this.count > 0) this.count--;
+      }
+    });
+  </script>
+</dom-module>
