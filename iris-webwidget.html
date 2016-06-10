@@ -1,6 +1,16 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="include-libs.html">
 
-<link rel="import" href="iris-webwidget-lib.html">
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../iron-list/iron-list.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+
+<link rel="import" href="../re-captcha/re-captcha.html">
+
+<link rel="import" href="../iris-polymer-date-picker/iris-date-picker.html">
 <link rel="import" href="iris-stepper.html">
 
 <dom-module id="iris-webwidget">
@@ -10,29 +20,80 @@
         display: block;
       }
     </style>
-
     <div id="loader">
-
+      <paper-spinner active></paper-spinner>
     </div>
 
     <div id="webterminals-list">
-
+      <paper-input label="" value="{{ofilter}}"></paper-input>
+      <iron-list items="[[filterList(webterminals,ofilter)]]" as="item">
+        <template>
+          <div>
+            [[item.label]]
+          </div>
+        </template>
+      </iron-list>
+      <paper-button raised>Далее</paper-button>
     </div>
 
     <div id="service-groups-list">
-
+      <paper-input label="" value="{{sgfilter}}"></paper-input>
+      <iron-list items="[[filterList(servicegroups,sgfilter)]]" as="item">
+        <template>
+          <div>
+            [[item.label]]
+          </div>
+        </template>
+      </iron-list>
+      <paper-button raised>Назад</paper-button>
+      <paper-button raised>Далее</paper-button>
     </div>
 
     <div id="client-fields">
-      <!-- Calendar -->
+      <div id="service-count">
+        <paper-icon-button icon="chevron-left" on-tap="decServiceCount"></paper-icon-button>
+        <paper-input readonly label="Количество услуг" value="{{serviceCount}}"></paper-input>
+        <paper-icon-button icon="chevron-right" on-tap="incServiceCount"></paper-icon-button>
+        <paper-button raised>Назад</paper-button>
+        <paper-button raised>Далее</paper-button>
+      </div>
+
+      <div id="calendar">
+        <iris-date-picker></iris-date-picker>
+        <paper-button raised>Назад</paper-button>
+        <paper-button raised>Далее</paper-button>
+      </div>
+
+      <div id="slot-picker">
+        <iron-list items="[[slots]]" as="item">
+          <template>
+            <div>
+              [[item.label]]
+            </div>
+          </template>
+        </iron-list>
+        <paper-button raised>Назад</paper-button>
+        <paper-button raised>Далее</paper-button>
+      </div>
+
+      <div id="fio-fields">
+        <paper-input label="Фамилия" value="{{clientSurname}}"></paper-input>
+        <paper-input label="Имя" value="{{clientName}}"></paper-input>
+        <paper-input label="Отчество" vakue="{{clientPatronymic}}"></paper-input>
+        <paper-button raised>Назад</paper-button>
+        <paper-button raised>Далее</paper-button>
+      </div>
+
     </div>
 
     <div id="captcha">
-
+      <re-captcha sitekey="6LceSiITAAAAAMroOv8D8KjDqlpfwCjQBtLj9xQA" response="{{captchaResponse}}"></re-captcha>
+      <paper-button raised>Назад</paper-button>
+      <paper-button raised>Далее</paper-button>
     </div>
 
     <div id="info">
-
+      <paper-button raised>Ок</paper-button>
     </div>
 
   </template>
@@ -43,7 +104,52 @@
         name: {
           type: Boolean
         }
+      },
+      ready() {
+        this.webterminals = [{
+          label: "Веб терминал 1"
+        }, {
+          label: "Веб терминал 2"
+        }, {
+          label: "Веб терминал 3"
+        }];
+
+        this.servicegroups = [{
+          label: "Услуга 1"
+        }, {
+          label: "Услуга 2"
+        }, {
+          label: "Услуга 3"
+        }];
+
+        this.slots = [{
+          label: "10:00 - 11:00"
+        }, {
+          label: "11:00 - 12:00"
+        }, {
+          label: "12:00 - 13:00"
+        }, {
+          label: "13:00 - 14:00"
+        }];
+
+        this.serviceCount = 0;
+        this.max = 10;
+        console.log('WOLOLO');
+      },
+      incServiceCount() {
+        if (this.serviceCount < this.max) this.serviceCount++;
+        console.log(this.captchaResponse);
+      },
+      decServiceCount() {
+        if (this.serviceCount > 0) this.serviceCount--;
+      },
+      filterList(webterminals, ofilter) {
+        if (!ofilter) return webterminals;
+        let result = [];
+        webterminals.forEach(t => ~t.label.indexOf(ofilter) && result.push(t))
+        return result;
       }
     });
   </script>
 </dom-module>
+e>

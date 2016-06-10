@@ -1,11 +1,11 @@
 {
-  "name": "iris-polymer-report-hub",
-  "homepage": "https://github.com/sdk-group/iris-polymer-report-hub",
+  "name": "iris-polymer-webwidget",
+  "homepage": "https://github.com/sdk-group/iris-polymer-webwidget",
   "authors": [
     "artificial-life <proteus.protocol@gmail.com>"
   ],
-  "description": "report stuff aggregator",
-  "main": "iris-report-hub.html",
+  "description": "demo",
+  "main": "iris-webwidget.html",
   "moduleType": [],
   "keywords": [
     "iris",
@@ -22,12 +22,12 @@
   ],
   "dependencies": {
     "polymer": "Polymer/polymer#^1.1.0",
-    "paper-checkbox": "PolymerElements/paper-checkbox#~1.1.3",
     "paper-elements": "PolymerElements/paper-elements#~1.0.7",
     "iron-elements": "polymerelements/iron-elements#^1.0.10",
-    "iris-polymer-importer": "https://github.com/sdk-group/iris-polymer-importer.git",
-    "iris-polymer-styles": "https://github.com/sdk-group/iris-polymer-styles.git",
-    "neon-animation": "PolymerElements/neon-animation#^1.2.0",
-    "iris-polymer-date-picker": "https://github.com/sdk-group/iris-polymer-date-picker.git"
+    "iris-polymer-date-picker": "https://github.com/sdk-group/iris-polymer-date-picker.git",
+    "lodash": "^4.13.1",
+    "moment": "^2.13.0",
+    "bluebird": "^3.4.0",
+    "re-captcha": "https://github.com/cbalit/re-captcha.git#^1.1.1"
   }
 }
