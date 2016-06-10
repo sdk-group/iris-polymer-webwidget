@@ -1,0 +1,110 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<dom-module id="iris-stepper">
+  <template>
+    <style>
+      :host,
+      .step {
+        @apply(--layout-horizontal);
+        height: 30px;
+      }
+
+      :host div:last-of-type {
+        @apply(--layout-flex-none);
+      }
+
+      .step {
+        @apply(--layout-flex-auto);
+        @apply(--layout-center);
+      }
+
+      .step-label {
+        font-size: 16px;
+      }
+
+      .icon {
+        border-radius: 50%;
+        background: cornflowerblue;
+        color: white;
+        margin: 0 8px;
+        width: 30px;
+        height: 30px;
+      }
+
+      .step::after {
+        content: '';
+        @apply(--layout-flex-auto);
+        border-bottom: 1px solid;
+        margin: 0 8px;
+      }
+
+      .step .icon {
+        display: none;
+        visibility: hidden;
+      }
+
+      .disabled .step-index {
+        background-color: grey;
+        display: inline;
+        visibility: visible;
+        text-align: center;
+        line-height: 30px;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        cursor: default;
+      }
+
+      .edit .step-edit {
+        display: inline;
+        visibility: visible;
+      }
+
+      .complete .step-complete {
+        display: inline;
+        visibility: visible;
+      }
+
+      .edit .step-label {
+        font-weight: 800;
+      }
+    </style>
+
+    <template is="dom-repeat" items="[[steps]]">
+      <div class$="step [[stepState(index,selected)]]">
+        <span class="icon step-index">[[doIndex(index)]]</span>
+        <paper-icon-button icon="icons:create" class="icon step-edit"></paper-icon-button>
+        <paper-icon-button icon="done" class="icon step-complete" on-tap="selectStep"></paper-icon-button>
+        <span class="step-label">[[item]]</span>
+      </div>
+    </template>
+  </template>
+  <script>
+    Polymer({
+      is: 'iris-stepper',
+      properties: {
+        selected: {
+          type: Number,
+          notify: true
+        },
+        steps: {
+          type: Array
+        },
+        states: {
+          type: Array
+        }
+      },
+      selectStep(e) {
+        this.set('selected', e.model.index)
+      },
+      doIndex(index) {
+        return index + 1;
+      },
+      stepState(index) {
+        if (index == this.selected) return 'edit';
+        return this.states[index] ? 'complete' : 'disabled';
+      }
+    });
+  </script>
+</dom-module>
