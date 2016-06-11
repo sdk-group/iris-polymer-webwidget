@@ -2,10 +2,65 @@
   //@NOTE: draft of irisCdn
   window.IRIS = window.IRIS || {};
 
-  window.IRIS.webwidget = {
+  var request = function(uri, data) {
+    return fetch(uri, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      method: 'POST',
+      body: JSON.stringify(data)
+    })
+  }
 
+  window.IRIS.webwidget = {
+    token: "1234567",
+    getTerminals() {
+      return Promise.resolve([{
+        label: "Терминал-1",
+        id: "term-1"
+      }, {
+        label: "Терминал-2",
+        id: "term-2"
+      }, {
+        label: "Терминал-3",
+        id: "term-3"
+      }]).delay(1000);
+
+      return request('/agen/info').then(d => d.available_ws)
+    },
+    getTerminalLayout(terminal_id) {
+      return Promise.resolve({
+        base: {
+          root: {
+            content: [{
+              id: "service-1",
+              label: "Услуга 1"
+            }, {
+              id: "service-2",
+              label: "Услуга 2"
+            }, {
+              id: "service-3",
+              label: "Услуга 3"
+            }]
+          }
+        }
+      }).delay(1000);
+    },
+    getAvailableDays(user_info) {
+      //user_info = {service_count: Number, service: String}
+      return daysArray;
+    },
+    getDaySlots(user_info) {
+      //user_info = {service_count: Number, service: String, dedicated_date: DateString}
+      return SlotsArray
+    },
+    confirmTicket(user_info) {
+      return TicketJSON
+    }
   };
 </script>
 <script src="../lodash/dist/lodash.min.js"></script>
 <script src="../moment/min/moment.min.js"></script>
 <script src="../moment/locale/ru.js"></script>
+<script src="../bluebird/js/browser/bluebird.min.js"></script>

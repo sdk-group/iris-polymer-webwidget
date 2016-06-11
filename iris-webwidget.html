@@ -20,16 +20,19 @@
       :host {
         display: block;
       }
-      
+
       .webwidget-page paper-button {
         float: right;
       }
     </style>
-    <div id="loader">
+
+    <iris-stepper id="stepper" steps="[[steps]]" states="{{states}}" selected="{{selected}}"></iris-stepper>
+
+    <div hidden$="{{!loading}}" id="loader">
       <paper-spinner active></paper-spinner>
     </div>
 
-    <iron-pages selected="[[selected]]">
+    <iron-pages hidden$="{{loading}}" selected="[[selected]]">
       <div class="webwidget-page" id="webterminals-list">
         <paper-input label="Название офиса" value="{{ofilter}}"></paper-input>
         <iron-list items="[[filterList(webterminals,ofilter)]]" as="item">
@@ -44,7 +47,7 @@
 
       <div class="webwidget-page" id="service-groups-list">
         <paper-input label="Название услуги" value="{{sgfilter}}"></paper-input>
-        <iron-list items="[[filterList(servicegroups,sgfilter)]]" as="item">
+        <iron-list items="[[filterList(services,sgfilter)]]" as="item">
           <template>
             <div>
               [[item.label]]
@@ -114,27 +117,10 @@
         }
       },
       ready() {
-        this.webterminals = [{
-          label: "Веб терминал 1"
-        }, {
-          label: "Веб терминал 2"
-        }, {
-          label: "Веб терминал 3"
-        }, {
-          label: "Веб терминал 1"
-        }, {
-          label: "Веб терминал 2"
-        }, {
-          label: "Веб терминал 3"
-        }];
-
-        this.servicegroups = [{
-          label: "Услуга 1"
-        }, {
-          label: "Услуга 2"
-        }, {
-          label: "Услуга 3"
-        }];
+        IRIS.webwidget.getTerminals().then(d => {
+          this.webterminals = d;
+          this.loading = false;
+        });
 
         this.slots = [{
           label: "10:00 - 11:00"
@@ -150,8 +136,11 @@
         this.max = 10;
         this.selected = 0;
         this.selectedField = 0;
+        this.loading = true;
+        this.steps = ['Офис', 'Услуга', 'Поля юзера', 'Капча', 'Инфо'];
+        this.states = Array(this.steps.length);
+        this.actions = [false, 'getLayouts'];
       },
-
       filterList(webterminals, ofilter) {
         if (!ofilter) return webterminals;
         let result = [];
@@ -160,12 +149,29 @@
       },
       nextPage() {
         this.selected++;
+
+        if (this.actions[this.selected]) {
+          this.loading = true;
+          var name = this.actions[this.selected];
+          console.log(name);
+          console.log(this[name]);
+          this[name]().then(d => this.loading = false)
+        }
+      },
+      getLayouts() {
+        return IRIS.webwidget.getTerminalLayout(this.terminal_id).then(d => this.services = d.base.root.content);
       },
       previousPage() {
         this.selected--;
       },
       nextField() {
         this.selectedField++;
+        if (this.selectedField == 1) {
+          this.loading = true;
+          IRIS.webwidget.getAvailableDays(this.ticketData).then(d => {
+            this.loading = false;
+          });
+        }
       },
       previousField() {
         this.selectedField--;
