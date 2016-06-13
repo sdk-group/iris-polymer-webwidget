@@ -7,6 +7,8 @@
 <link rel="import" href="../iron-list/iron-list.html">
 <link rel="import" href="../iron-icons/iron-icons.html">
 <link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-item/paper-item.html">
 
 <link rel="import" href="../re-captcha/re-captcha.html">
 
@@ -20,7 +22,7 @@
       :host {
         display: block;
       }
-
+      
       .webwidget-page paper-button {
         float: right;
       }
@@ -35,27 +37,30 @@
     <iron-pages hidden$="{{loading}}" selected="[[selected]]">
       <div class="webwidget-page" id="webterminals-list">
         <paper-input label="Название офиса" value="{{ofilter}}"></paper-input>
-        <iron-list items="[[filterList(webterminals,ofilter)]]" as="item">
-          <template>
-            <div>
+        <paper-listbox selected="{{selectedOffice}}">
+          <template id="visibleOffices" is="dom-repeat" items="[[filterOfficeList(webterminals,ofilter)]]">
+            <paper-item>
               [[item.label]]
-            </div>
+            </paper-item>
           </template>
-        </iron-list>
-        <paper-button on-tap="nextPage" raised>Далее</paper-button>
+        </paper-listbox>
+
+        <paper-button disabled$="[[canNextPage(selectedOffice)]]" on-tap="nextPage" raised>Далее</paper-button>
       </div>
 
       <div class="webwidget-page" id="service-groups-list">
         <paper-input label="Название услуги" value="{{sgfilter}}"></paper-input>
-        <iron-list items="[[filterList(services,sgfilter)]]" as="item">
-          <template>
-            <div>
+
+        <paper-listbox selected="{{selectedService}}">
+          <template id="visibleServices" is="dom-repeat" items="[[filterServiceList(services,sgfilter)]]">
+            <paper-item>
               [[item.label]]
-            </div>
+            </paper-item>
           </template>
-        </iron-list>
-        <paper-button on-tap="nextPage" raised>Далее</paper-button>
-        <paper-button on-tap="previousPage" raised>Назад</paper-button>
+        </paper-listbox>
+
+        <paper-button disabled$="[[canNextPage(selectedService)]]" on-tap="nextPage" raised>Далее</paper-button>
+        <paper-button disabled$="[[canPrevPage(selectedService)]]" on-tap="previousPage" raised>Назад</paper-button>
       </div>
 
       <div class="webwidget-page" id="client-fields">
@@ -63,14 +68,14 @@
           <div id="service-count">
             <iris-counter count="{{serviceCount}}"></iris-counter>
 
-            <paper-button on-tap="nextField" raised>Далее</paper-button>
-            <paper-button on-tap="previousPage" raised>Назад</paper-button>
+            <paper-button disabled$="[[canNextField(serviceCount)]]" on-tap="nextField" raised>Далее</paper-button>
+            <paper-button disabled$="[[canPrevField(serviceCount)]]" on-tap="previousPage" raised>Назад</paper-button>
           </div>
 
           <div id="calendar">
             <iris-date-picker></iris-date-picker>
-            <paper-button on-tap="nextField" raised>Далее</paper-button>
-            <paper-button on-tap="previousField" raised>Назад</paper-button>
+            <paper-button disabled$="[[canNextField(serviceCount)]]" on-tap="nextField" raised>Далее</paper-button>
+            <paper-button disabled$="[[canPrevField(serviceCount)]]" on-tap="previousField" raised>Назад</paper-button>
           </div>
 
           <div id="slot-picker">
@@ -81,16 +86,17 @@
                 </div>
               </template>
             </iron-list>
-            <paper-button on-tap="nextField" raised>Далее</paper-button>
-            <paper-button on-tap="previousField" raised>Назад</paper-button>
+            <paper-button disabled$="[[canNextField(serviceCount)]]" on-tap="nextField" raised>Далее</paper-button>
+            <paper-button disabled$="[[canPrevField(serviceCount)]]" on-tap="previousField" raised>Назад</paper-button>
           </div>
 
           <div id="fio-fields">
             <paper-input label="Фамилия" value="{{clientSurname}}"></paper-input>
             <paper-input label="Имя" value="{{clientName}}"></paper-input>
             <paper-input label="Отчество" vakue="{{clientPatronymic}}"></paper-input>
-            <paper-button on-tap="nextPage" raised>Далее</paper-button>
-            <paper-button on-tap="previousField" raised>Назад</paper-button>
+
+            <paper-button disabled$="[[canNextField(serviceCount)]]" on-tap="nextPage" raised>Далее</paper-button>
+            <paper-button disabled$="[[canPrevField(serviceCount)]]" on-tap="previousField" raised>Назад</paper-button>
           </div>
         </iron-pages>
 
@@ -98,12 +104,12 @@
 
       <div class="webwidget-page" id="captcha">
         <re-captcha sitekey="6LceSiITAAAAAMroOv8D8KjDqlpfwCjQBtLj9xQA" response="{{captchaResponse}}"></re-captcha>
-        <paper-button on-tap="nextPage" raised>Далее</paper-button>
-        <paper-button on-tap="previousPage" raised>Назад</paper-button>
+        <paper-button disabled$="[[canNextPage(captchaResponse)]]" on-tap="nextPage" raised>Далее</paper-button>
+        <paper-button disabled$="[[canPrevPage(captchaResponse)]]" on-tap="previousPage" raised>Назад</paper-button>
       </div>
 
       <div class="webwidget-page" id="info">
-        <paper-button raised>Ок</paper-button>
+        <paper-button raised on-tap="final">Ок</paper-button>
       </div>
     </iron-pages>
 
@@ -139,7 +145,17 @@
         this.loading = true;
         this.steps = ['Офис', 'Услуга', 'Поля юзера', 'Капча', 'Инфо'];
         this.states = Array(this.steps.length);
-        this.actions = [false, 'getLayouts'];
+        this.actions = [false, 'getLayouts', 'getServices'];
+        this.field_actions = [false, 'getAvailableDays', 'getServices'];
+
+      },
+      filterOfficeList(webterminals, ofilter) {
+        this.selectedOffice = null;
+        return this.filterList(webterminals, ofilter);
+      },
+      filterServiceList(webterminals, ofilter) {
+        this.selectedService = null;
+        return this.filterList(webterminals, ofilter);
       },
       filterList(webterminals, ofilter) {
         if (!ofilter) return webterminals;
@@ -147,34 +163,58 @@
         webterminals.forEach(t => ~t.label.indexOf(ofilter) && result.push(t))
         return result;
       },
+      doAction(actionset, step) {
+        let action = actionset[step];
+        console.log(actionset, step, action);
+        if (!action) return false;
+
+        this.loading = true;
+        return this[action]().then(d => this.loading = false);
+      },
       nextPage() {
         this.selected++;
-
-        if (this.actions[this.selected]) {
-          this.loading = true;
-          var name = this.actions[this.selected];
-          console.log(name);
-          console.log(this[name]);
-          this[name]().then(d => this.loading = false)
-        }
+        this.doAction(this.actions, this.selected);
       },
       getLayouts() {
+        let items = this.$.visibleOffices.items;
+        this.terminal_id = items[this.selectedOffice];
         return IRIS.webwidget.getTerminalLayout(this.terminal_id).then(d => this.services = d.base.root.content);
+      },
+      getServices() {
+        let items = this.$.visibleServices.items;
+        this.ticketQuery = {
+          'service': items[this.selectedService].id
+        };
+        return Promise.resolve(true);
       },
       previousPage() {
         this.selected--;
       },
       nextField() {
         this.selectedField++;
-        if (this.selectedField == 1) {
-          this.loading = true;
-          IRIS.webwidget.getAvailableDays(this.ticketData).then(d => {
-            this.loading = false;
-          });
-        }
+        this.doAction(this.field_actions, this.selectedField);
+      },
+      getAvailableDays() {
+        this.ticketQuery.service_count = this.serviceCount;
+        return IRIS.webwidget.getAvailableDays(this.ticketQuery);
       },
       previousField() {
         this.selectedField--;
+      },
+      canNextPage(value) {
+
+      },
+      canPrevPage(value) {
+
+      },
+      canNextField(value) {
+
+      },
+      canPrevField(value) {
+
+      },
+      final() {
+        console.log('FINAL');
       }
     });
   </script>

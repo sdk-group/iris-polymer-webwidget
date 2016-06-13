@@ -25,6 +25,12 @@
       }, {
         label: "Терминал-3",
         id: "term-3"
+      }, {
+        label: "Терминал-2",
+        id: "term-2"
+      }, {
+        label: "Терминал-3",
+        id: "term-3"
       }]).delay(1000);
 
       return request('/agen/info').then(d => d.available_ws)
@@ -47,19 +53,43 @@
         }
       }).delay(1000);
     },
-    getAvailableDays(user_info) {
+    getAvailableDays(ticket_query) {
       //user_info = {service_count: Number, service: String}
-      return daysArray;
+      ///uri : prebook/available-days Object
+      return {
+        days: [{
+          date: "2016-06-13T06:55:28+05:00",
+          is_available: false
+        }],
+        done: false
+      };
     },
-    getDaySlots(user_info) {
+    getDaySlots(ticket_query) {
       //user_info = {service_count: Number, service: String, dedicated_date: DateString}
-      return SlotsArray
+      //url: /prebook/ticket-observe
+      return {
+        slots: [{
+          time_description: [0, 1800]
+        }, {
+          time_description: [1800, 3600]
+        }]
+      }
     },
-    confirmTicket(user_info) {
-      return TicketJSON
+    confirmTicket(ticket_query) {
+      //uri: /prebook/ticket-confirm
+      return {
+        context: {},
+        ticket: {
+          id: "ticket-department-1-2016-06-14--2",
+          code: "0012565262",
+          time_description: [0, 900],
+          dedicated_date: "2016-06-14"
+        }
+      }
     }
   };
 </script>
+
 <script src="../lodash/dist/lodash.min.js"></script>
 <script src="../moment/min/moment.min.js"></script>
 <script src="../moment/locale/ru.js"></script>
