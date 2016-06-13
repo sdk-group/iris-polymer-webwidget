@@ -9,6 +9,7 @@
 <link rel="import" href="../iron-pages/iron-pages.html">
 <link rel="import" href="../paper-listbox/paper-listbox.html">
 <link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 
 <link rel="import" href="../re-captcha/re-captcha.html">
 
@@ -20,11 +21,111 @@
   <template>
     <style>
       :host {
-        display: block;
+        @apply(--layout-vertical);
+        @apply(--shadow-elevation-2dp);
       }
       
-      .webwidget-page paper-button {
-        float: right;
+      .webwidget-page {
+        @apply(--layout-vertical);
+        justify-content: space-between;
+      }
+      
+      .webwidget-page {
+        @apply(--layout-flex-auto);
+      }
+      
+      .webwidget-page .webwidget-actions {
+        padding: 10px;
+        @apply(--layout-horizontal);
+        @apply(--layout-end-justified);
+        border-top: 1px solid #ccc;
+        min-height: 40px;
+      }
+      
+      .webwidget-body {
+        padding: 0 10px;
+      }
+      
+      iris-stepper {
+        padding: 15px 0;
+        border-bottom: 1px solid #ccc;
+      }
+      
+      iron-pages {
+        @apply(--layout-flex-auto);
+        @apply(--layout-vertical);
+      }
+      
+      .webwidget-body {
+        @apply(--layout-vertical);
+        @apply(--layout-flex-auto);
+      }
+      
+      .webwidget-body .list {
+        @apply(--layout-flex-auto);
+        height: 0;
+        overflow: auto;
+      }
+      
+      #loader {
+        @apply(--layout);
+        @apply(--layout-flex-auto);
+        @apply(--layout-center-center);
+      }
+      
+      #loader paper-spinner {
+        --paper-spinner-stroke-width: 9px;
+        height: 75px;
+        width: 75px;
+      }
+      
+      iris-counter {
+        width: 300px;
+        padding-top: 10px;
+        text-align: center;
+        margin: 0 auto;
+      }
+      
+      #calendar .webwidget-body {
+        @apply(--layout-horizontal);
+        @apply(--layout-center-center);
+        @apply(--layout-wrap);
+      }
+      
+      #calendar paper-icon-button {
+        width: 50px;
+        height: 50px;
+      }
+      
+      #month-title {
+        width: 100%;
+        text-align: center;
+        text-transform: capitalize;
+      }
+      
+      #slots {
+        @apply(--layout-flex-auto);
+        padding: 10px 0;
+      }
+      
+      .timeslot {
+        padding: 10px;
+        height: 50px;
+        cursor: pointer;
+      }
+      
+      .timeslot-content {
+        padding: 10px;
+        @apply(--shadow-elevation-2dp);
+      }
+      
+      .timeslot.selected .timeslot-content {
+        @apply(--shadow-elevation-6dp);
+        border: 2px solid var(--paper-light-blue-600);
+      }
+      
+      #captcha .webwidget-body {
+        @apply(--layout-center-center);
       }
     </style>
 
@@ -36,80 +137,118 @@
 
     <iron-pages hidden$="{{loading}}" selected="[[selected]]">
       <div class="webwidget-page" id="webterminals-list">
-        <paper-input label="Название офиса" value="{{ofilter}}"></paper-input>
-        <paper-listbox selected="{{selectedOffice}}">
-          <template id="visibleOffices" is="dom-repeat" items="[[filterOfficeList(webterminals,ofilter)]]">
-            <paper-item>
-              [[item.label]]
-            </paper-item>
-          </template>
-        </paper-listbox>
 
-        <paper-button disabled$="[[canNextPage(selectedOffice)]]" on-tap="nextPage" raised>Далее</paper-button>
+        <div class="webwidget-body">
+          <paper-input label="Название офиса" value="{{ofilter}}"></paper-input>
+          <paper-listbox class="list" selected="{{selectedOffice}}">
+            <template id="visibleOffices" is="dom-repeat" items="[[filterOfficeList(webterminals,ofilter)]]">
+              <paper-item>
+                [[item.label]]
+              </paper-item>
+            </template>
+          </paper-listbox>
+        </div>
+
+        <div class="webwidget-actions">
+          <paper-button disabled$="[[canNextPage(selectedOffice)]]" on-tap="nextPage">Далее</paper-button>
+        </div>
       </div>
 
       <div class="webwidget-page" id="service-groups-list">
-        <paper-input label="Название услуги" value="{{sgfilter}}"></paper-input>
+        <div class="webwidget-body">
+          <paper-input label="Название услуги" value="{{sgfilter}}"></paper-input>
 
-        <paper-listbox selected="{{selectedService}}">
-          <template id="visibleServices" is="dom-repeat" items="[[filterServiceList(services,sgfilter)]]">
-            <paper-item>
-              [[item.label]]
-            </paper-item>
-          </template>
-        </paper-listbox>
+          <paper-listbox class="list" selected="{{selectedService}}">
+            <template id="visibleServices" is="dom-repeat" items="[[filterServiceList(services,sgfilter)]]">
+              <paper-item>
+                [[item.label]]
+              </paper-item>
+            </template>
+          </paper-listbox>
+        </div>
 
-        <paper-button disabled$="[[canNextPage(selectedService)]]" on-tap="nextPage" raised>Далее</paper-button>
-        <paper-button disabled$="[[canPrevPage(selectedService)]]" on-tap="previousPage" raised>Назад</paper-button>
+        <div class="webwidget-actions">
+          <paper-button on-tap="previousPage">Назад</paper-button>
+          <paper-button disabled$="[[canNextPage(selectedService)]]" on-tap="nextPage">Далее</paper-button>
+        </div>
       </div>
 
       <div class="webwidget-page" id="client-fields">
         <iron-pages selected="[[selectedField]]">
-          <div id="service-count">
-            <iris-counter count="{{serviceCount}}"></iris-counter>
-
-            <paper-button disabled$="[[canNextField(serviceCount)]]" on-tap="nextField" raised>Далее</paper-button>
-            <paper-button disabled$="[[canPrevField(serviceCount)]]" on-tap="previousPage" raised>Назад</paper-button>
+          <div class="webwidget-page" id="service-count">
+            <div class="webwidget-body">
+              <iris-counter count="{{serviceCount}}" min="1"></iris-counter>
+            </div>
+            <div class="webwidget-actions">
+              <paper-button on-tap="previousPage">Назад</paper-button>
+              <paper-button disabled$="[[canNextField(serviceCount)]]" on-tap="nextField">Далее</paper-button>
+            </div>
           </div>
 
-          <div id="calendar">
-            <iris-date-picker></iris-date-picker>
-            <paper-button disabled$="[[canNextField(serviceCount)]]" on-tap="nextField" raised>Далее</paper-button>
-            <paper-button disabled$="[[canPrevField(serviceCount)]]" on-tap="previousField" raised>Назад</paper-button>
+          <div class="webwidget-page" id="calendar">
+            <div class="webwidget-body">
+              <div id="month-title">
+                [[monthName(monthFromNow)]]
+              </div>
+              <paper-icon-button disabled$="[[canPrevMonth(monthFromNow)]]" on-tap="prevMonth" icon="chevron-left"></paper-icon-button>
+              <iris-date-picker hide-month-picker date="{{pickerDate}}" disabled-days="{{disabledDays}}" selected="{{dedicatedDate}}"></iris-date-picker>
+              <paper-icon-button disabled$="[[canNextMonth(monthFromNow,isLastAvailable)]]" on-tap="nextMonth" icon="chevron-right"></paper-icon-button>
+            </div>
+            <div class="webwidget-actions">
+              <paper-button on-tap="previousField">Назад</paper-button>
+              <paper-button disabled$="[[canNextField(dedicatedDate)]]" on-tap="nextField">Далее</paper-button>
+            </div>
           </div>
 
-          <div id="slot-picker">
-            <iron-list items="[[slots]]" as="item">
-              <template>
-                <div>
-                  [[item.label]]
-                </div>
-              </template>
-            </iron-list>
-            <paper-button disabled$="[[canNextField(serviceCount)]]" on-tap="nextField" raised>Далее</paper-button>
-            <paper-button disabled$="[[canPrevField(serviceCount)]]" on-tap="previousField" raised>Назад</paper-button>
+          <div class="webwidget-page" id="slot-picker">
+            <div class="webwidget-body">
+              <iron-list id="slots" items="[[slots]]" as="item" grid selected-items="{{selectedSlot}}" selection-enabled>
+                <template>
+                  <span class$="[[_computedClass(selected)]]">
+                    <span class="timeslot-content">    [[slotText(item.time_description)]]                </span>
+                  </span>
+                </template>
+              </iron-list>
+            </div>
+            <div class="webwidget-actions">
+              <paper-button on-tap="previousField">Назад</paper-button>
+              <paper-button disabled$="[[canNextField(selectedSlot)]]" on-tap="nextField">Далее</paper-button>
+            </div>
           </div>
 
-          <div id="fio-fields">
-            <paper-input label="Фамилия" value="{{clientSurname}}"></paper-input>
-            <paper-input label="Имя" value="{{clientName}}"></paper-input>
-            <paper-input label="Отчество" vakue="{{clientPatronymic}}"></paper-input>
+          <div class="webwidget-page" id="fio-fields">
+            <div class="webwidget-body">
+              <paper-input label="Фамилия" value="{{clientSurname}}"></paper-input>
+              <paper-input label="Имя" value="{{clientName}}"></paper-input>
+              <paper-input label="Отчество" vakue="{{clientPatronymic}}"></paper-input>
+            </div>
 
-            <paper-button disabled$="[[canNextField(serviceCount)]]" on-tap="nextPage" raised>Далее</paper-button>
-            <paper-button disabled$="[[canPrevField(serviceCount)]]" on-tap="previousField" raised>Назад</paper-button>
+            <div class="webwidget-actions">
+              <paper-button on-tap="previousField">Назад</paper-button>
+              <paper-button disabled$="[[canNextField(clientSurname)]]" on-tap="nextPage">Далее</paper-button>
+            </div>
           </div>
         </iron-pages>
 
       </div>
 
       <div class="webwidget-page" id="captcha">
-        <re-captcha sitekey="6LceSiITAAAAAMroOv8D8KjDqlpfwCjQBtLj9xQA" response="{{captchaResponse}}"></re-captcha>
-        <paper-button disabled$="[[canNextPage(captchaResponse)]]" on-tap="nextPage" raised>Далее</paper-button>
-        <paper-button disabled$="[[canPrevPage(captchaResponse)]]" on-tap="previousPage" raised>Назад</paper-button>
+        <div class="webwidget-body">
+          <re-captcha sitekey="6LceSiITAAAAAMroOv8D8KjDqlpfwCjQBtLj9xQA" response="{{captchaResponse}}"></re-captcha>
+        </div>
+        <div class="webwidget-actions">
+          <paper-button on-tap="previousPage">Назад</paper-button>
+          <paper-button disabled$="[[canNextPage(captchaResponse)]]" on-tap="nextPage">Далее</paper-button>
+        </div>
       </div>
 
       <div class="webwidget-page" id="info">
-        <paper-button raised on-tap="final">Ок</paper-button>
+        <div class="webwidget-body">
+          ПИН: [[ticket.code]]
+        </div>
+        <div class="webwidget-actions">
+          <paper-button raised on-tap="final">Ок</paper-button>
+        </div>
       </div>
     </iron-pages>
 
@@ -128,26 +267,26 @@
           this.loading = false;
         });
 
-        this.slots = [{
-          label: "10:00 - 11:00"
-        }, {
-          label: "11:00 - 12:00"
-        }, {
-          label: "12:00 - 13:00"
-        }, {
-          label: "13:00 - 14:00"
-        }];
-
-        this.serviceCount = 0;
-        this.max = 10;
-        this.selected = 0;
-        this.selectedField = 0;
-        this.loading = true;
+        this.reset();
         this.steps = ['Офис', 'Услуга', 'Поля юзера', 'Капча', 'Инфо'];
         this.states = Array(this.steps.length);
-        this.actions = [false, 'getLayouts', 'getServices'];
-        this.field_actions = [false, 'getAvailableDays', 'getServices'];
+        this.actions = [false, 'getLayouts', 'getServices', 'storeName', 'storeCaptchaAndConfirm'];
+        this.field_actions = [false, 'getAvailableDays', 'getSlots', 'storeSlot'];
+        this.loading = true;
 
+      },
+      reset() {
+        this.clientSurname = null;
+        this.dedicatedDate = null;
+        this.selectedOffice = null;
+        this.captchaResponse = null;
+        this.selectedService = null;
+        this.monthFromNow = 0;
+        this.pirckerDate = moment().format();
+        this.disabledDays = [];
+        this.serviceCount = 1;
+        this.selected = 0;
+        this.selectedField = 0;
       },
       filterOfficeList(webterminals, ofilter) {
         this.selectedOffice = null;
@@ -165,7 +304,6 @@
       },
       doAction(actionset, step) {
         let action = actionset[step];
-        console.log(actionset, step, action);
         if (!action) return false;
 
         this.loading = true;
@@ -178,6 +316,7 @@
       getLayouts() {
         let items = this.$.visibleOffices.items;
         this.terminal_id = items[this.selectedOffice];
+
         return IRIS.webwidget.getTerminalLayout(this.terminal_id).then(d => this.services = d.base.root.content);
       },
       getServices() {
@@ -194,29 +333,114 @@
         this.selectedField++;
         this.doAction(this.field_actions, this.selectedField);
       },
+      monthInfo(month_offset) {
+        let now = moment();
+        now.add(month_offset, 'months');
+
+        let month = now.format('M');
+        let year = now.format('GGGG');
+        let day = now.format('D');
+        let days_in_month = new Date(year, month, 0).getDate();
+
+        return {
+          now,
+          days_in_month,
+          day,
+          year,
+          month
+        };
+      },
       getAvailableDays() {
         this.ticketQuery.service_count = this.serviceCount;
-        return IRIS.webwidget.getAvailableDays(this.ticketQuery);
+        let info = this.monthInfo(this.monthFromNow);
+
+        this.ticketQuery.start = this.monthFromNow === 0 ? 0 : this.ticketQuery.end + 1;
+        this.ticketQuery.end = this.monthFromNow === 0 ? info.days_in_month - info.day : info.days_in_month + this.ticketQuery.end + 1;
+
+        return IRIS.webwidget.getAvailableDays(this.ticketQuery).then(data => this.processAvailableDays(data));
+      },
+      processAvailableDays(data) {
+        this.isLastAvailable = !data.done;
+        this.disabledDays = _.reduce(data.days, (acc, day) => {
+          if (!day.available) acc.push(day.date.slice(0, 10));
+          return acc;
+        }, []);
+        this.dedicatedDate = null;
+      },
+      getSlots() {
+        this.ticketQuery.dedicated_date = this.dedicatedDate;
+        return IRIS.webwidget.getDaySlots(this.ticketQuery).then((d) => {
+          this.slots = d.slots;
+        });
+      },
+      storeSlot() {
+        this.ticketQuery.time_description = this.selectedSlot.time_description;
+        console.log(this.ticketQuery);
+        return Promise.resolve(true)
+      },
+      storeName() {
+        this.ticketQuery.client = {
+          name: this.clientSurname + " " + this.clientName + " " + this.clientPatronymic
+        };
+
+        console.log(this.ticketQuery);
+        return Promise.resolve(true)
+      },
+      storeCaptchaAndConfirm() {
+        this.ticketQuery.captcha_response = this.captchaResponse;
+        console.log(this.ticketQuery);
+        return IRIS.webwidget.confirmTicket(this.ticketQuery).then(d => {
+          this.ticket = d.ticket;
+        });
+      },
+      slotText(desc) {
+        let ts = _.map(desc, t => _.padStart(((t / 3600) | 0), 2, '0') + ':' + _.padStart((t % 3600) / 60, 2, '0'))
+        return ts.join(' - ');
       },
       previousField() {
         this.selectedField--;
       },
       canNextPage(value) {
-
+        return _.isUndefined(value) || value === null;
       },
       canPrevPage(value) {
 
       },
       canNextField(value) {
-
+        return _.isUndefined(value) || value === null || value === '';
       },
-      canPrevField(value) {
-
+      canPrevMonth(x) {
+        return x <= 0;
+      },
+      canNextMonth() {
+        return !this.isLastAvailable;
+      },
+      prevMonth() {
+        this.makeDate(-1);
+      },
+      nextMonth() {
+        this.makeDate(1);
+      },
+      makeDate(v) {
+        this.dedicatedDate = null;
+        this.monthFromNow = this.monthFromNow + v;
+        this.pirckerDate = moment().add(this.monthFromNow, 'month');
+        this.doAction(this.field_actions, this.selectedField);
+      },
+      monthName() {
+        return moment().add(this.monthFromNow, 'month').format('MMMM')
+      },
+      _computedClass(isSelected) {
+        var classes = 'timeslot';
+        if (isSelected) {
+          classes += ' selected';
+        }
+        return classes;
       },
       final() {
+        this.reset();
         console.log('FINAL');
       }
     });
   </script>
 </dom-module>
-e>

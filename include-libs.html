@@ -10,7 +10,7 @@
       },
       method: 'POST',
       body: JSON.stringify(data)
-    })
+    }).then(d => d.json())
   }
 
   window.IRIS.webwidget = {
@@ -52,32 +52,49 @@
           }
         }
       }).delay(1000);
+
+      return request('/terminal/bootstrap', {
+        workstation: terminal_id
+      }).then(d => d.views)
     },
     getAvailableDays(ticket_query) {
-      //user_info = {service_count: Number, service: String}
-      ///uri : prebook/available-days Object
-      return {
+      return Promise.resolve({
         days: [{
           date: "2016-06-13T06:55:28+05:00",
           is_available: false
+        }, {
+          date: "2016-06-14T06:55:28+05:00",
+          is_available: false
+        }, {
+          date: "2016-06-15T06:55:28+05:00",
+          is_available: false
+        }, {
+          date: "2016-06-16T06:55:28+05:00",
+          is_available: false
+        }, {
+          date: "2016-06-17T06:55:28+05:00",
+          is_available: false
         }],
         done: false
-      };
+      }).delay(500);
+
+      return request('prebook/available-days', ticket_query)
     },
     getDaySlots(ticket_query) {
-      //user_info = {service_count: Number, service: String, dedicated_date: DateString}
-      //url: /prebook/ticket-observe
-      return {
-        slots: [{
-          time_description: [0, 1800]
-        }, {
-          time_description: [1800, 3600]
-        }]
+      let a = [];
+      for (var i = 0; i < 100; i++) {
+        a[i] = {
+          time_description: [i * 1800, (i + 1) * 1800]
+        };
       }
+      return Promise.resolve({
+        slots: a
+      }).delay(500)
+
+      return request('/prebook/ticket-observe', ticket_query)
     },
     confirmTicket(ticket_query) {
-      //uri: /prebook/ticket-confirm
-      return {
+      return Promise.resolve({
         context: {},
         ticket: {
           id: "ticket-department-1-2016-06-14--2",
@@ -85,7 +102,9 @@
           time_description: [0, 900],
           dedicated_date: "2016-06-14"
         }
-      }
+      });
+
+      return request('/prebook/ticket-confirm', ticket_query)
     }
   };
 </script>

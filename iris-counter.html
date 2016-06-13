@@ -9,6 +9,7 @@
       :host {
         display: flex;
         flex-direction: row;
+        @apply(--layout-center-center);
       }
       
       paper-icon-button {
@@ -31,13 +32,17 @@
         max: {
           type: Number,
           value: 10
+        },
+        min: {
+          type: Number,
+          value: 0
         }
       },
       incServiceCount() {
         if (this.count < this.max) this.count++;
       },
       decServiceCount() {
-        if (this.count > 0) this.count--;
+        if (this.count > this.min) this.count--;
       }
     });
   </script>

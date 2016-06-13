@@ -18,6 +18,11 @@
       @apply(--paper-font-body1);
       line-height: 40px;
     }
+    
+    .header,
+    .footer {
+      @apply(--shadow-elevation-2dp);
+    }
   </style>
   <style>
     body,
@@ -26,19 +31,55 @@
       padding: 0;
       height: 100%;
     }
-
+    
     body {
-      padding: 0 24px;
+      display: flex;
+      flex-direction: column;
+      background: #fafafa;
+    }
+    
+    iris-webwidget {
+      flex: 1 1 auto;
+    }
+    
+    .header {
+      padding: 20px 0;
+      text-transform: uppercase;
+      font-size: 22px;
+      text-align: center;
+    }
+    
+    .header,
+    .footer,
+    iris-webwidget {
+      background-color: #fff;
+      width: 750px;
+      margin: 10px auto;
+    }
+    
+    .footer {
+      margin-bottom: 0;
+      padding: 10px 0;
+      text-align: right;
+    }
+    
+    .footer span {
+      margin-right: 15px;
     }
   </style>
 </head>
 
 <body>
-
+  <div class="header">
+    iris webwidget example
+  </div>
   <template is="dom-bind">
     <iris-webwidget> </iris-webwidget>
   </template>
 
+  <div class="footer">
+    <span>    ©SDKgroup  </span>
+  </div>
 
   <script id="__bs_script__">
     //<![CDATA[
