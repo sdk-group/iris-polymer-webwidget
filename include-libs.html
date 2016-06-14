@@ -1,63 +1,73 @@
 <script>
-  //@NOTE: draft of irisCdn
   window.IRIS = window.IRIS || {};
 
+  var token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoibWVnYXRyb24iLCJvcmlnaW4iOiJ1bmtub3duIiwiaWF0IjoxNDYzODE2ODA1fQ.LryMjzoCgLDwuVW87IxiqgYVh0lwfaN4KhPhDaXkPOA";
+  var server = "http://localhost:9000";
+
   var request = function(uri, data) {
-    return fetch(uri, {
+    data = data || {};
+    data.token = token;
+    console.log(data);
+    var url = server + uri;
+    return fetch(url, {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
       method: 'POST',
       body: JSON.stringify(data)
-    }).then(d => d.json())
+    }).then(d => d.json()).then(d => d.value)
   }
 
   window.IRIS.webwidget = {
-    token: "1234567",
     getTerminals() {
-      return Promise.resolve([{
-        label: "Терминал-1",
-        id: "term-1"
-      }, {
-        label: "Терминал-2",
-        id: "term-2"
-      }, {
-        label: "Терминал-3",
-        id: "term-3"
-      }, {
-        label: "Терминал-2",
-        id: "term-2"
-      }, {
-        label: "Терминал-3",
-        id: "term-3"
-      }]).delay(1000);
+      console.log('<IRIS> getTerminals');
+      // return Promise.resolve([{
+      //   label: "Терминал-1",
+      //   id: "term-1"
+      // }, {
+      //   label: "Терминал-2",
+      //   id: "term-2"
+      // }, {
+      //   label: "Терминал-3",
+      //   id: "term-3"
+      // }, {
+      //   label: "Терминал-2",
+      //   id: "term-2"
+      // }, {
+      //   label: "Терминал-3",
+      //   id: "term-3"
+      // }]).delay(1000);
 
-      return request('/agen/info').then(d => d.available_ws)
+      return request('/agent/info').then(d => {
+        return d.ws_available
+      })
     },
     getTerminalLayout(terminal_id) {
-      return Promise.resolve({
-        base: {
-          root: {
-            content: [{
-              id: "service-1",
-              label: "Услуга 1"
-            }, {
-              id: "service-2",
-              label: "Услуга 2"
-            }, {
-              id: "service-3",
-              label: "Услуга 3"
-            }]
-          }
-        }
-      }).delay(1000);
+      console.log('<IRIS> getTerminalLayout', terminal_id);
+      // return Promise.resolve({
+      //   base: {
+      //     root: {
+      //       content: [{
+      //         id: "service-1",
+      //         label: "Услуга 1"
+      //       }, {
+      //         id: "service-2",
+      //         label: "Услуга 2"
+      //       }, {
+      //         id: "service-3",
+      //         label: "Услуга 3"
+      //       }]
+      //     }
+      //   }
+      // }).delay(1000);
 
       return request('/terminal/bootstrap', {
         workstation: terminal_id
       }).then(d => d.views)
     },
     getAvailableDays(ticket_query) {
+      console.log('<IRIS> getAvailableDays', ticket_query);
       return Promise.resolve({
         days: [{
           date: "2016-06-13T06:55:28+05:00",
@@ -81,6 +91,7 @@
       return request('prebook/available-days', ticket_query)
     },
     getDaySlots(ticket_query) {
+      console.log('<IRIS> getDaySlots', ticket_query);
       let a = [];
       for (var i = 0; i < 100; i++) {
         a[i] = {
@@ -94,13 +105,15 @@
       return request('/prebook/ticket-observe', ticket_query)
     },
     confirmTicket(ticket_query) {
+      console.log('<IRIS> confirmTicket', ticket_query);
       return Promise.resolve({
         context: {},
         ticket: {
           id: "ticket-department-1-2016-06-14--2",
           code: "0012565262",
           time_description: [0, 900],
-          dedicated_date: "2016-06-14"
+          dedicated_date: "2016-06-14",
+          service_count: 2
         }
       });
 

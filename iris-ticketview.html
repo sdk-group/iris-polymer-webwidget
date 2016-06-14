@@ -1,0 +1,76 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<dom-module id="iris-ticketview">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+
+      #pintext {
+        border-bottom: 1px solid;
+        text-align: center;
+        padding-bottom: 10px;
+      }
+
+      #code {
+        font-size: 22px;
+        font-weight: bold;
+        padding: 10px 0;
+      }
+
+      .ticket-entry {
+        margin-bottom: 10px;
+      }
+
+      #title {
+        text-align: center;
+        font-size: 22px;
+        padding: 10px 0;
+      }
+    </style>
+    <div id="title">
+      Талон успешно зарегистрирован
+    </div>
+    <div id="pintext" class="ticket-entry">
+      <div>
+        Пин­-код:
+      </div>
+      <div id="code">[[ticket.code]] </div>
+      <div>Талон предварительной записи</div>
+      <div>Необходима регистрация по пин­коду на</div>
+      <div>терминале в день приема, ждем вас!</div>
+    </div>
+    <div class="ticket-entry">
+      Количество дел: [[ticket.service_count]]
+    </div>
+    <div class="ticket-entry">
+      Талон выдан: [[dateToString(ticket.booking_date)]]
+    </div>
+    <div class="ticket-entry">
+      Предварительная запись: [[dateToString(ticket.dedicated_date)]] [[timeToString(ticket)]]
+    </div>
+
+  </template>
+  <script>
+    Polymer({
+      is: 'iris-ticketview',
+      properties: {
+        ticket: {
+          type: Object,
+          value: {}
+        }
+      },
+      dateToString(value) {
+        return moment(value).format('D MMMM YYYY');
+      },
+      timeToString(ticket) {
+        if (!ticket.time_description) return '';
+        return this.secToTime(ticket.time_description[0])
+      },
+      secToTime(t) {
+        return _.padStart(((t / 3600) | 0), 2, '0') + ':' + _.padStart((t % 3600) / 60, 2, '0');
+      }
+    });
+  </script>
+</dom-module>

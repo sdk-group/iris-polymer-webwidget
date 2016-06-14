@@ -15,6 +15,7 @@
 
 <link rel="import" href="../iris-polymer-date-picker/iris-date-picker.html">
 <link rel="import" href="iris-stepper.html">
+<link rel="import" href="iris-ticketview.html">
 <link rel="import" href="iris-counter.html">
 
 <dom-module id="iris-webwidget">
@@ -24,16 +25,16 @@
         @apply(--layout-vertical);
         @apply(--shadow-elevation-2dp);
       }
-      
+
       .webwidget-page {
         @apply(--layout-vertical);
         justify-content: space-between;
       }
-      
+
       .webwidget-page {
         @apply(--layout-flex-auto);
       }
-      
+
       .webwidget-page .webwidget-actions {
         padding: 10px;
         @apply(--layout-horizontal);
@@ -41,101 +42,101 @@
         border-top: 1px solid #ccc;
         min-height: 40px;
       }
-      
+
       .webwidget-body {
         padding: 0 10px;
       }
-      
+
       iris-stepper {
         padding: 15px 0;
         border-bottom: 1px solid #ccc;
       }
-      
+
       iron-pages {
         @apply(--layout-flex-auto);
         @apply(--layout-vertical);
       }
-      
+
       .webwidget-body {
         @apply(--layout-vertical);
         @apply(--layout-flex-auto);
       }
-      
+
       .webwidget-body .list {
         @apply(--layout-flex-auto);
         height: 0;
         overflow: auto;
       }
-      
+
       #loader {
         @apply(--layout);
         @apply(--layout-flex-auto);
         @apply(--layout-center-center);
       }
-      
+
       #loader paper-spinner {
         --paper-spinner-stroke-width: 9px;
         height: 75px;
         width: 75px;
       }
-      
+
       iris-counter {
         width: 300px;
         padding-top: 10px;
         text-align: center;
         margin: 0 auto;
       }
-      
+
       #calendar .webwidget-body {
         @apply(--layout-horizontal);
         @apply(--layout-center-center);
         @apply(--layout-wrap);
       }
-      
+
       #calendar paper-icon-button {
         width: 50px;
         height: 50px;
       }
-      
-      #month-title {
-        width: 100%;
+
+      #calendar-widget {
         text-align: center;
         text-transform: capitalize;
       }
-      
+
       #slots {
         @apply(--layout-flex-auto);
         padding: 10px 0;
       }
-      
+
       .timeslot {
         padding: 10px;
         height: 50px;
         cursor: pointer;
       }
-      
+
       .timeslot-content {
         padding: 10px;
         @apply(--shadow-elevation-2dp);
+        border: 2px solid white;
       }
-      
+
       .timeslot.selected .timeslot-content {
         @apply(--shadow-elevation-6dp);
         border: 2px solid var(--paper-light-blue-600);
       }
-      
-      #captcha .webwidget-body {
+
+      #captcha .webwidget-body,
+      #info .webwidget-body {
         @apply(--layout-center-center);
       }
     </style>
+    <iris-stepper id="stepper" hidden$="[[ticketInfoVisible]]" steps="[[steps]]" states="{{states}}" selected="{{selected}}"></iris-stepper>
 
-    <iris-stepper id="stepper" steps="[[steps]]" states="{{states}}" selected="{{selected}}"></iris-stepper>
-
-    <div hidden$="{{!loading}}" id="loader">
+    <div hidden$="[[!loading]]" id="loader">
       <paper-spinner active></paper-spinner>
     </div>
 
-    <iron-pages hidden$="{{loading}}" selected="[[selected]]">
+    <iron-pages hidden$="[[fieldsEditorHidden]]" selected="[[selected]]">
       <div class="webwidget-page" id="webterminals-list">
 
         <div class="webwidget-body">
@@ -156,47 +157,52 @@
 
       <div class="webwidget-page" id="service-groups-list">
         <div class="webwidget-body">
-          <paper-input label="Название услуги" value="{{sgfilter}}"></paper-input>
+          <iron-pages selected="[[selectedServiceField]]">
+            <div class="webwidget-page" id="service-count">
+              <paper-input label="Название услуги" value="{{sgfilter}}"></paper-input>
 
-          <paper-listbox class="list" selected="{{selectedService}}">
-            <template id="visibleServices" is="dom-repeat" items="[[filterServiceList(services,sgfilter)]]">
-              <paper-item>
-                [[item.label]]
-              </paper-item>
-            </template>
-          </paper-listbox>
-        </div>
+              <paper-listbox class="list" selected="{{selectedService}}">
+                <template id="visibleServices" is="dom-repeat" items="[[filterServiceList(services,sgfilter)]]">
+                  <paper-item>
+                    [[item.label]]
+                  </paper-item>
+                </template>
+              </paper-listbox>
 
-        <div class="webwidget-actions">
-          <paper-button on-tap="previousPage">Назад</paper-button>
-          <paper-button disabled$="[[canNextPage(selectedService)]]" on-tap="nextPage">Далее</paper-button>
+              <div class="webwidget-actions">
+                <paper-button on-tap="previousPage">Назад</paper-button>
+                <paper-button disabled$="[[canNextPage(selectedService)]]" on-tap="nextServiceField">Далее</paper-button>
+              </div>
+            </div>
+
+            <div class="webwidget-page" id="service-count">
+              <div class="webwidget-body">
+                <iris-counter count="{{serviceCount}}" min="1"></iris-counter>
+              </div>
+
+              <div class="webwidget-actions">
+                <paper-button on-tap="previousPage">Назад</paper-button>
+                <paper-button on-tap="nextPage">Далее</paper-button>
+              </div>
+            </div>
+          </iron-pages>
         </div>
       </div>
 
-      <div class="webwidget-page" id="client-fields">
-        <iron-pages selected="[[selectedField]]">
-          <div class="webwidget-page" id="service-count">
-            <div class="webwidget-body">
-              <iris-counter count="{{serviceCount}}" min="1"></iris-counter>
-            </div>
-            <div class="webwidget-actions">
-              <paper-button on-tap="previousPage">Назад</paper-button>
-              <paper-button disabled$="[[canNextField(serviceCount)]]" on-tap="nextField">Далее</paper-button>
-            </div>
-          </div>
-
+      <div class="webwidget-page" id="date-and-time">
+        <iron-pages selected="[[selectedDateField]]">
           <div class="webwidget-page" id="calendar">
             <div class="webwidget-body">
-              <div id="month-title">
-                [[monthName(monthFromNow)]]
-              </div>
               <paper-icon-button disabled$="[[canPrevMonth(monthFromNow)]]" on-tap="prevMonth" icon="chevron-left"></paper-icon-button>
-              <iris-date-picker hide-month-picker date="{{pickerDate}}" disabled-days="{{disabledDays}}" selected="{{dedicatedDate}}"></iris-date-picker>
+              <div id="calendar-widget">
+                [[monthName(monthFromNow)]]
+                <iris-date-picker id="picker" hide-month-picker date="{{pickerDate}}" disabled-days="{{disabledDays}}" selected="{{dedicatedDate}}"></iris-date-picker>
+              </div>
               <paper-icon-button disabled$="[[canNextMonth(monthFromNow,isLastAvailable)]]" on-tap="nextMonth" icon="chevron-right"></paper-icon-button>
             </div>
             <div class="webwidget-actions">
               <paper-button on-tap="previousField">Назад</paper-button>
-              <paper-button disabled$="[[canNextField(dedicatedDate)]]" on-tap="nextField">Далее</paper-button>
+              <paper-button disabled$="[[canNextField(dedicatedDate)]]" on-tap="nextDateField">Далее</paper-button>
             </div>
           </div>
 
@@ -212,10 +218,14 @@
             </div>
             <div class="webwidget-actions">
               <paper-button on-tap="previousField">Назад</paper-button>
-              <paper-button disabled$="[[canNextField(selectedSlot)]]" on-tap="nextField">Далее</paper-button>
+              <paper-button disabled$="[[canNextField(selectedSlot)]]" on-tap="nextPage">Далее</paper-button>
             </div>
           </div>
+        </iron-pages>
+      </div>
 
+      <div class="webwidget-page" id="client-fields">
+        <iron-pages selected="[[selectedField]]">
           <div class="webwidget-page" id="fio-fields">
             <div class="webwidget-body">
               <paper-input label="Фамилия" value="{{clientSurname}}"></paper-input>
@@ -225,33 +235,33 @@
 
             <div class="webwidget-actions">
               <paper-button on-tap="previousField">Назад</paper-button>
-              <paper-button disabled$="[[canNextField(clientSurname)]]" on-tap="nextPage">Далее</paper-button>
+              <paper-button disabled$="[[canNextField(clientSurname)]]" on-tap="nextField">Далее</paper-button>
+            </div>
+          </div>
+
+          <div class="webwidget-page" id="captcha">
+            <div class="webwidget-body">
+              <re-captcha id="captcha-widget" sitekey="6LceSiITAAAAAMroOv8D8KjDqlpfwCjQBtLj9xQA" response="{{captchaResponse}}"></re-captcha>
+            </div>
+            <div class="webwidget-actions">
+              <paper-button on-tap="previousPage">Назад</paper-button>
+              <!-- disabled$="[[canNextPage(captchaResponse)]]" -->
+              <paper-button on-tap="nextPage">Завершить</paper-button>
             </div>
           </div>
         </iron-pages>
-
       </div>
 
-      <div class="webwidget-page" id="captcha">
-        <div class="webwidget-body">
-          <re-captcha sitekey="6LceSiITAAAAAMroOv8D8KjDqlpfwCjQBtLj9xQA" response="{{captchaResponse}}"></re-captcha>
-        </div>
-        <div class="webwidget-actions">
-          <paper-button on-tap="previousPage">Назад</paper-button>
-          <paper-button disabled$="[[canNextPage(captchaResponse)]]" on-tap="nextPage">Далее</paper-button>
-        </div>
-      </div>
-
-      <div class="webwidget-page" id="info">
-        <div class="webwidget-body">
-          ПИН: [[ticket.code]]
-        </div>
-        <div class="webwidget-actions">
-          <paper-button raised on-tap="final">Ок</paper-button>
-        </div>
-      </div>
     </iron-pages>
 
+    <div hidden$="[[!ticketInfoVisible]]" class="webwidget-page" id="info">
+      <div class="webwidget-body">
+        <iris-ticketview ticket="[[ticket]]"></iris-ticketview>
+      </div>
+      <div class="webwidget-actions">
+        <paper-button raised on-tap="final">Ок</paper-button>
+      </div>
+    </div>
   </template>
   <script>
     Polymer({
@@ -259,21 +269,28 @@
       properties: {
         name: {
           type: Boolean
+        },
+        fieldsEditorHidden: {
+          type: Boolean,
+          computed: '_computeFieldsEditorVisibility(loading,ticketInfoVisible)'
         }
       },
+      _computeFieldsEditorVisibility(loading, ticketInfoVisible) {
+        return loading || ticketInfoVisible;
+      },
+
       ready() {
         IRIS.webwidget.getTerminals().then(d => {
-          this.webterminals = d;
+          this.webterminals = _.values(d);
           this.loading = false;
         });
 
         this.reset();
-        this.steps = ['Офис', 'Услуга', 'Поля юзера', 'Капча', 'Инфо'];
+        this.steps = ['Офис', 'Услуга', 'Дата и время', 'Дополнительные поля'];
         this.states = Array(this.steps.length);
-        this.actions = [false, 'getLayouts', 'getServices', 'storeName', 'storeCaptchaAndConfirm'];
-        this.field_actions = [false, 'getAvailableDays', 'getSlots', 'storeSlot'];
+        this.actions = [false, 'getLayouts', 'getAvailableDays', false, 'storeAndConfirm'];
+        this.field_actions = [false, false];
         this.loading = true;
-
       },
       reset() {
         this.clientSurname = null;
@@ -287,6 +304,15 @@
         this.serviceCount = 1;
         this.selected = 0;
         this.selectedField = 0;
+        this.selectedServiceField = 0;
+        this.selectedDateField = 0;
+        this.ticketInfoVisible = false;
+        this.$["captcha-widget"].isWidgetLoaded() && this.$["captcha-widget"].reset();
+        this.$.picker.selections = [];
+      },
+      fieldsHidden(loading, ticketInfoVisible) {
+        console.log('FH', loading, ticketInfoVisible);
+        return loading || ticketInfoVisible;
       },
       filterOfficeList(webterminals, ofilter) {
         this.selectedOffice = null;
@@ -304,6 +330,7 @@
       },
       doAction(actionset, step) {
         let action = actionset[step];
+        console.log(action);
         if (!action) return false;
 
         this.loading = true;
@@ -313,18 +340,18 @@
         this.selected++;
         this.doAction(this.actions, this.selected);
       },
+      nextServiceField() {
+        this.selectedServiceField++;
+      },
+      nextDateField() {
+        this.selectedDateField++;
+        this.doAction(['getSlots'], 0);
+      },
       getLayouts() {
         let items = this.$.visibleOffices.items;
-        this.terminal_id = items[this.selectedOffice];
+        this.terminal_id = items[this.selectedOffice].id;
 
         return IRIS.webwidget.getTerminalLayout(this.terminal_id).then(d => this.services = d.base.root.content);
-      },
-      getServices() {
-        let items = this.$.visibleServices.items;
-        this.ticketQuery = {
-          'service': items[this.selectedService].id
-        };
-        return Promise.resolve(true);
       },
       previousPage() {
         this.selected--;
@@ -351,7 +378,11 @@
         };
       },
       getAvailableDays() {
-        this.ticketQuery.service_count = this.serviceCount;
+        let items = this.$.visibleServices.items;
+        this.ticketQuery = {
+          'service': items[this.selectedService].id,
+          'service_count': this.serviceCount
+        };
         let info = this.monthInfo(this.monthFromNow);
 
         this.ticketQuery.start = this.monthFromNow === 0 ? 0 : this.ticketQuery.end + 1;
@@ -373,24 +404,17 @@
           this.slots = d.slots;
         });
       },
-      storeSlot() {
+      storeAndConfirm() {
         this.ticketQuery.time_description = this.selectedSlot.time_description;
-        console.log(this.ticketQuery);
-        return Promise.resolve(true)
-      },
-      storeName() {
         this.ticketQuery.client = {
           name: this.clientSurname + " " + this.clientName + " " + this.clientPatronymic
         };
-
-        console.log(this.ticketQuery);
-        return Promise.resolve(true)
-      },
-      storeCaptchaAndConfirm() {
         this.ticketQuery.captcha_response = this.captchaResponse;
+
         console.log(this.ticketQuery);
         return IRIS.webwidget.confirmTicket(this.ticketQuery).then(d => {
           this.ticket = d.ticket;
+          this.ticketInfoVisible = true;
         });
       },
       slotText(desc) {
