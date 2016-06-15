@@ -319,7 +319,6 @@
         };
         this.ticketQuery.captcha_response = this.captchaResponse;
 
-        console.log(this.ticketQuery);
         return IRIS.webwidget.confirmTicket(this.ticketQuery).then(d => {
           this.ticket = d.ticket;
           this.ticketInfoVisible = true;
@@ -469,7 +468,6 @@
       },
       final() {
         this.reset();
-        console.log('FINAL');
       }
     });
   </script>
