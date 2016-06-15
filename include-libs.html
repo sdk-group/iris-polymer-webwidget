@@ -1,8 +1,8 @@
 <script>
   window.IRIS = window.IRIS || {};
 
-  var token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoibWVnYXRyb24iLCJvcmlnaW4iOiJ1bmtub3duIiwiaWF0IjoxNDYzODE2ODA1fQ.LryMjzoCgLDwuVW87IxiqgYVh0lwfaN4KhPhDaXkPOA";
-  var server = "http://localhost:9000";
+  var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoid2Vid2lkZ2V0Iiwib3JpZ2luIjoidW5rbm93biIsImlhdCI6MTQ2NTk3OTYzMX0.epeiWjS5tPikygWatibnSobn43vj2s3718YyyTs-430";
+  var server = "http://192.168.1.37:9000";
 
   var request = function(uri, data) {
     data = data || {};
@@ -16,7 +16,10 @@
       },
       method: 'POST',
       body: JSON.stringify(data)
-    }).then(d => d.json()).then(d => d.value)
+    }).then(d => d.json()).then(d => {
+      console.log(d);
+      return d.value
+    })
   }
 
   window.IRIS.webwidget = {
@@ -40,6 +43,7 @@
       // }]).delay(1000);
 
       return request('/agent/info').then(d => {
+        console.log(d);
         return d.ws_available
       })
     },
@@ -68,55 +72,17 @@
     },
     getAvailableDays(ticket_query) {
       console.log('<IRIS> getAvailableDays', ticket_query);
-      return Promise.resolve({
-        days: [{
-          date: "2016-06-13T06:55:28+05:00",
-          is_available: false
-        }, {
-          date: "2016-06-14T06:55:28+05:00",
-          is_available: false
-        }, {
-          date: "2016-06-15T06:55:28+05:00",
-          is_available: false
-        }, {
-          date: "2016-06-16T06:55:28+05:00",
-          is_available: false
-        }, {
-          date: "2016-06-17T06:55:28+05:00",
-          is_available: false
-        }],
-        done: false
-      }).delay(500);
 
-      return request('prebook/available-days', ticket_query)
+      return request('/prebook/available-days', ticket_query)
     },
     getDaySlots(ticket_query) {
       console.log('<IRIS> getDaySlots', ticket_query);
-      let a = [];
-      for (var i = 0; i < 100; i++) {
-        a[i] = {
-          time_description: [i * 1800, (i + 1) * 1800]
-        };
-      }
-      return Promise.resolve({
-        slots: a
-      }).delay(500)
+
 
       return request('/prebook/ticket-observe', ticket_query)
     },
     confirmTicket(ticket_query) {
       console.log('<IRIS> confirmTicket', ticket_query);
-      return Promise.resolve({
-        context: {},
-        ticket: {
-          id: "ticket-department-1-2016-06-14--2",
-          code: "0012565262",
-          time_description: [0, 900],
-          dedicated_date: "2016-06-14",
-          service_count: 2
-        }
-      });
-
       return request('/prebook/ticket-confirm', ticket_query)
     }
   };

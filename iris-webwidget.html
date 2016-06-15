@@ -181,7 +181,7 @@
               </div>
 
               <div class="webwidget-actions">
-                <paper-button on-tap="previousPage">Назад</paper-button>
+                <paper-button on-tap="previousServiceField">Назад</paper-button>
                 <paper-button on-tap="nextPage">Далее</paper-button>
               </div>
             </div>
@@ -196,12 +196,12 @@
               <paper-icon-button disabled$="[[canPrevMonth(monthFromNow)]]" on-tap="prevMonth" icon="chevron-left"></paper-icon-button>
               <div id="calendar-widget">
                 [[monthName(monthFromNow)]]
-                <iris-date-picker id="picker" hide-month-picker date="{{pickerDate}}" disabled-days="{{disabledDays}}" selected="{{dedicatedDate}}"></iris-date-picker>
+                <iris-date-picker id="picker" hide-month-picker date="{{pickerDate}}" available-days="{{availableDays}}" selected="{{dedicatedDate}}"></iris-date-picker>
               </div>
               <paper-icon-button disabled$="[[canNextMonth(monthFromNow,isLastAvailable)]]" on-tap="nextMonth" icon="chevron-right"></paper-icon-button>
             </div>
             <div class="webwidget-actions">
-              <paper-button on-tap="previousField">Назад</paper-button>
+              <paper-button on-tap="previousPage">Назад</paper-button>
               <paper-button disabled$="[[canNextField(dedicatedDate)]]" on-tap="nextDateField">Далее</paper-button>
             </div>
           </div>
@@ -217,7 +217,7 @@
               </iron-list>
             </div>
             <div class="webwidget-actions">
-              <paper-button on-tap="previousField">Назад</paper-button>
+              <paper-button on-tap="previousDateField">Назад</paper-button>
               <paper-button disabled$="[[canNextField(selectedSlot)]]" on-tap="nextPage">Далее</paper-button>
             </div>
           </div>
@@ -300,7 +300,6 @@
         this.selectedService = null;
         this.monthFromNow = 0;
         this.pirckerDate = moment().format();
-        this.disabledDays = [];
         this.serviceCount = 1;
         this.selected = 0;
         this.selectedField = 0;
@@ -343,9 +342,15 @@
       nextServiceField() {
         this.selectedServiceField++;
       },
+      previousServiceField() {
+        this.selectedServiceField--;
+      },
       nextDateField() {
         this.selectedDateField++;
         this.doAction(['getSlots'], 0);
+      },
+      previousDateField() {
+        this.selectedDateField--;
       },
       getLayouts() {
         let items = this.$.visibleOffices.items;
@@ -378,13 +383,16 @@
         };
       },
       getAvailableDays() {
-        let items = this.$.visibleServices.items;
-        this.ticketQuery = {
-          'service': items[this.selectedService].id,
-          'service_count': this.serviceCount
-        };
-        let info = this.monthInfo(this.monthFromNow);
+        this.$.picker.selections = [];
 
+        let items = this.$.visibleServices.items;
+        this.ticketQuery = this.ticketQuery || {};
+        this.ticketQuery.service = items[this.selectedService].id;
+        this.ticketQuery.service_count = this.serviceCount;
+        this.ticketQuery.workstation = this.terminal_id;
+
+        let info = this.monthInfo(this.monthFromNow);
+        this.pickerDate = info.now;
         this.ticketQuery.start = this.monthFromNow === 0 ? 0 : this.ticketQuery.end + 1;
         this.ticketQuery.end = this.monthFromNow === 0 ? info.days_in_month - info.day : info.days_in_month + this.ticketQuery.end + 1;
 
@@ -392,8 +400,8 @@
       },
       processAvailableDays(data) {
         this.isLastAvailable = !data.done;
-        this.disabledDays = _.reduce(data.days, (acc, day) => {
-          if (!day.available) acc.push(day.date.slice(0, 10));
+        this.availableDays = _.reduce(data.days, (acc, day) => {
+          if (day.is_available) acc.push(day.date.slice(0, 10));
           return acc;
         }, []);
         this.dedicatedDate = null;
@@ -402,6 +410,7 @@
         this.ticketQuery.dedicated_date = this.dedicatedDate;
         return IRIS.webwidget.getDaySlots(this.ticketQuery).then((d) => {
           this.slots = d.slots;
+          document.querySelector('iron-list').fire('iron-resize');
         });
       },
       storeAndConfirm() {
@@ -449,7 +458,7 @@
         this.dedicatedDate = null;
         this.monthFromNow = this.monthFromNow + v;
         this.pirckerDate = moment().add(this.monthFromNow, 'month');
-        this.doAction(this.field_actions, this.selectedField);
+        this.doAction(['getAvailableDays'], 0);
       },
       monthName() {
         return moment().add(this.monthFromNow, 'month').format('MMMM')
