@@ -25,16 +25,16 @@
         @apply(--layout-vertical);
         @apply(--shadow-elevation-2dp);
       }
-
+      
       .webwidget-page {
         @apply(--layout-vertical);
         justify-content: space-between;
       }
-
+      
       .webwidget-page {
         @apply(--layout-flex-auto);
       }
-
+      
       .webwidget-page .webwidget-actions {
         padding: 10px;
         @apply(--layout-horizontal);
@@ -42,89 +42,89 @@
         border-top: 1px solid #ccc;
         min-height: 40px;
       }
-
+      
       .webwidget-body {
         padding: 0 10px;
       }
-
+      
       iris-stepper {
         padding: 15px 0;
         border-bottom: 1px solid #ccc;
       }
-
+      
       iron-pages {
         @apply(--layout-flex-auto);
         @apply(--layout-vertical);
       }
-
+      
       .webwidget-body {
         @apply(--layout-vertical);
         @apply(--layout-flex-auto);
       }
-
+      
       .webwidget-body .list {
         @apply(--layout-flex-auto);
         height: 0;
         overflow: auto;
       }
-
+      
       #loader {
         @apply(--layout);
         @apply(--layout-flex-auto);
         @apply(--layout-center-center);
       }
-
+      
       #loader paper-spinner {
         --paper-spinner-stroke-width: 9px;
         height: 75px;
         width: 75px;
       }
-
+      
       iris-counter {
         width: 300px;
         padding-top: 10px;
         text-align: center;
         margin: 0 auto;
       }
-
+      
       #calendar .webwidget-body {
         @apply(--layout-horizontal);
         @apply(--layout-center-center);
         @apply(--layout-wrap);
       }
-
+      
       #calendar paper-icon-button {
         width: 50px;
         height: 50px;
       }
-
+      
       #calendar-widget {
         text-align: center;
         text-transform: capitalize;
       }
-
+      
       #slots {
         @apply(--layout-flex-auto);
         padding: 10px 0;
       }
-
+      
       .timeslot {
         padding: 10px;
         height: 50px;
         cursor: pointer;
       }
-
+      
       .timeslot-content {
         padding: 10px;
         @apply(--shadow-elevation-2dp);
         border: 2px solid white;
       }
-
+      
       .timeslot.selected .timeslot-content {
         @apply(--shadow-elevation-6dp);
         border: 2px solid var(--paper-light-blue-600);
       }
-
+      
       #captcha .webwidget-body,
       #info .webwidget-body {
         @apply(--layout-center-center);
@@ -275,10 +275,56 @@
           computed: '_computeFieldsEditorVisibility(loading,ticketInfoVisible)'
         }
       },
-      _computeFieldsEditorVisibility(loading, ticketInfoVisible) {
-        return loading || ticketInfoVisible;
-      },
+      getLayouts() {
+        let items = this.$.visibleOffices.items;
+        this.terminal_id = items[this.selectedOffice].id;
 
+        return IRIS.webwidget.getTerminalLayout(this.terminal_id).then(d => this.services = d.base.root.content);
+      },
+      getAvailableDays() {
+        let items = this.$.visibleServices.items;
+        let info = this.monthInfo(this.monthFromNow);
+        this.$.picker.selections = [];
+        this.pickerDate = info.now;
+
+        this.ticketQuery = this.ticketQuery || {};
+
+        this.ticketQuery.service = items[this.selectedService].id;
+        this.ticketQuery.service_count = this.serviceCount;
+        this.ticketQuery.workstation = this.terminal_id;
+        this.ticketQuery.start = this.monthFromNow === 0 ? 0 : this.ticketQuery.end + 1;
+        this.ticketQuery.end = this.monthFromNow === 0 ? info.days_in_month - info.day : info.days_in_month + this.ticketQuery.end + 1;
+
+        return IRIS.webwidget.getAvailableDays(this.ticketQuery).then(data => this.processAvailableDays(data));
+      },
+      processAvailableDays(data) {
+        this.isLastAvailable = !data.done;
+        this.availableDays = _.reduce(data.days, (acc, day) => {
+          if (day.is_available) acc.push(day.date.slice(0, 10));
+          return acc;
+        }, []);
+        this.dedicatedDate = null;
+      },
+      getSlots() {
+        this.ticketQuery.dedicated_date = this.dedicatedDate;
+        return IRIS.webwidget.getDaySlots(this.ticketQuery).then((slots) => {
+          this.slots = slots;
+          document.querySelector('iron-list').fire('iron-resize');
+        });
+      },
+      storeAndConfirm() {
+        this.ticketQuery.time_description = this.selectedSlot.time_description;
+        this.ticketQuery.client = {
+          name: this.clientSurname + " " + this.clientName + " " + this.clientPatronymic
+        };
+        this.ticketQuery.captcha_response = this.captchaResponse;
+
+        console.log(this.ticketQuery);
+        return IRIS.webwidget.confirmTicket(this.ticketQuery).then(d => {
+          this.ticket = d.ticket;
+          this.ticketInfoVisible = true;
+        });
+      },
       ready() {
         IRIS.webwidget.getTerminals().then(d => {
           this.webterminals = _.values(d);
@@ -309,8 +355,10 @@
         this.$["captcha-widget"].isWidgetLoaded() && this.$["captcha-widget"].reset();
         this.$.picker.selections = [];
       },
+      _computeFieldsEditorVisibility(loading, ticketInfoVisible) {
+        return loading || ticketInfoVisible;
+      },
       fieldsHidden(loading, ticketInfoVisible) {
-        console.log('FH', loading, ticketInfoVisible);
         return loading || ticketInfoVisible;
       },
       filterOfficeList(webterminals, ofilter) {
@@ -328,8 +376,7 @@
         return result;
       },
       doAction(actionset, step) {
-        let action = actionset[step];
-        console.log(action);
+        let action = _.isArray(actionset) ? actionset[step] : actionset;
         if (!action) return false;
 
         this.loading = true;
@@ -347,16 +394,10 @@
       },
       nextDateField() {
         this.selectedDateField++;
-        this.doAction(['getSlots'], 0);
+        this.doAction('getSlots');
       },
       previousDateField() {
         this.selectedDateField--;
-      },
-      getLayouts() {
-        let items = this.$.visibleOffices.items;
-        this.terminal_id = items[this.selectedOffice].id;
-
-        return IRIS.webwidget.getTerminalLayout(this.terminal_id).then(d => this.services = d.base.root.content);
       },
       previousPage() {
         this.selected--;
@@ -381,50 +422,6 @@
           year,
           month
         };
-      },
-      getAvailableDays() {
-        this.$.picker.selections = [];
-
-        let items = this.$.visibleServices.items;
-        this.ticketQuery = this.ticketQuery || {};
-        this.ticketQuery.service = items[this.selectedService].id;
-        this.ticketQuery.service_count = this.serviceCount;
-        this.ticketQuery.workstation = this.terminal_id;
-
-        let info = this.monthInfo(this.monthFromNow);
-        this.pickerDate = info.now;
-        this.ticketQuery.start = this.monthFromNow === 0 ? 0 : this.ticketQuery.end + 1;
-        this.ticketQuery.end = this.monthFromNow === 0 ? info.days_in_month - info.day : info.days_in_month + this.ticketQuery.end + 1;
-
-        return IRIS.webwidget.getAvailableDays(this.ticketQuery).then(data => this.processAvailableDays(data));
-      },
-      processAvailableDays(data) {
-        this.isLastAvailable = !data.done;
-        this.availableDays = _.reduce(data.days, (acc, day) => {
-          if (day.is_available) acc.push(day.date.slice(0, 10));
-          return acc;
-        }, []);
-        this.dedicatedDate = null;
-      },
-      getSlots() {
-        this.ticketQuery.dedicated_date = this.dedicatedDate;
-        return IRIS.webwidget.getDaySlots(this.ticketQuery).then((d) => {
-          this.slots = d.slots;
-          document.querySelector('iron-list').fire('iron-resize');
-        });
-      },
-      storeAndConfirm() {
-        this.ticketQuery.time_description = this.selectedSlot.time_description;
-        this.ticketQuery.client = {
-          name: this.clientSurname + " " + this.clientName + " " + this.clientPatronymic
-        };
-        this.ticketQuery.captcha_response = this.captchaResponse;
-
-        console.log(this.ticketQuery);
-        return IRIS.webwidget.confirmTicket(this.ticketQuery).then(d => {
-          this.ticket = d.ticket;
-          this.ticketInfoVisible = true;
-        });
       },
       slotText(desc) {
         let ts = _.map(desc, t => _.padStart(((t / 3600) | 0), 2, '0') + ':' + _.padStart((t % 3600) / 60, 2, '0'))
@@ -458,7 +455,7 @@
         this.dedicatedDate = null;
         this.monthFromNow = this.monthFromNow + v;
         this.pirckerDate = moment().add(this.monthFromNow, 'month');
-        this.doAction(['getAvailableDays'], 0);
+        this.doAction('getAvailableDays');
       },
       monthName() {
         return moment().add(this.monthFromNow, 'month').format('MMMM')
