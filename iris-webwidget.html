@@ -25,16 +25,16 @@
         @apply(--layout-vertical);
         @apply(--shadow-elevation-2dp);
       }
-      
+
       .webwidget-page {
         @apply(--layout-vertical);
         justify-content: space-between;
       }
-      
+
       .webwidget-page {
         @apply(--layout-flex-auto);
       }
-      
+
       .webwidget-page .webwidget-actions {
         padding: 10px;
         @apply(--layout-horizontal);
@@ -42,89 +42,89 @@
         border-top: 1px solid #ccc;
         min-height: 40px;
       }
-      
+
       .webwidget-body {
         padding: 0 10px;
       }
-      
+
       iris-stepper {
         padding: 15px 0;
         border-bottom: 1px solid #ccc;
       }
-      
+
       iron-pages {
         @apply(--layout-flex-auto);
         @apply(--layout-vertical);
       }
-      
+
       .webwidget-body {
         @apply(--layout-vertical);
         @apply(--layout-flex-auto);
       }
-      
+
       .webwidget-body .list {
         @apply(--layout-flex-auto);
         height: 0;
         overflow: auto;
       }
-      
+
       #loader {
         @apply(--layout);
         @apply(--layout-flex-auto);
         @apply(--layout-center-center);
       }
-      
+
       #loader paper-spinner {
         --paper-spinner-stroke-width: 9px;
         height: 75px;
         width: 75px;
       }
-      
+
       iris-counter {
         width: 300px;
         padding-top: 10px;
         text-align: center;
         margin: 0 auto;
       }
-      
+
       #calendar .webwidget-body {
         @apply(--layout-horizontal);
         @apply(--layout-center-center);
         @apply(--layout-wrap);
       }
-      
+
       #calendar paper-icon-button {
         width: 50px;
         height: 50px;
       }
-      
+
       #calendar-widget {
         text-align: center;
         text-transform: capitalize;
       }
-      
+
       #slots {
         @apply(--layout-flex-auto);
         padding: 10px 0;
       }
-      
+
       .timeslot {
         padding: 10px;
         height: 50px;
         cursor: pointer;
       }
-      
+
       .timeslot-content {
         padding: 10px;
         @apply(--shadow-elevation-2dp);
         border: 2px solid white;
       }
-      
+
       .timeslot.selected .timeslot-content {
         @apply(--shadow-elevation-6dp);
         border: 2px solid var(--paper-light-blue-600);
       }
-      
+
       #captcha .webwidget-body,
       #info .webwidget-body {
         @apply(--layout-center-center);
@@ -234,7 +234,7 @@
             </div>
 
             <div class="webwidget-actions">
-              <paper-button on-tap="previousField">Назад</paper-button>
+              <paper-button on-tap="previousPage">Назад</paper-button>
               <paper-button disabled$="[[canNextField(clientSurname)]]" on-tap="nextField">Далее</paper-button>
             </div>
           </div>
@@ -244,7 +244,7 @@
               <re-captcha id="captcha-widget" sitekey="6LceSiITAAAAAMroOv8D8KjDqlpfwCjQBtLj9xQA" response="{{captchaResponse}}"></re-captcha>
             </div>
             <div class="webwidget-actions">
-              <paper-button on-tap="previousPage">Назад</paper-button>
+              <paper-button on-tap="previousField">Назад</paper-button>
               <!-- disabled$="[[canNextPage(captchaResponse)]]" -->
               <paper-button on-tap="nextPage">Завершить</paper-button>
             </div>
