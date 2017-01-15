@@ -129,6 +129,7 @@
       #info .webwidget-body {
         @apply(--layout-center-center);
       }
+
     </style>
     <iris-stepper id="stepper" hidden$="[[ticketInfoVisible]]" steps="[[steps]]" states="{{states}}" selected="{{selected}}"></iris-stepper>
 
@@ -177,7 +178,7 @@
 
             <div class="webwidget-page" id="service-count">
               <div class="webwidget-body">
-                <iris-counter count="{{serviceCount}}" min="1"></iris-counter>
+                <iris-counter count="{{serviceCount}}" min="1" max="{{service_count.max-value}}"></iris-counter>
               </div>
 
               <div class="webwidget-actions">
@@ -211,7 +212,9 @@
               <iron-list id="slots" items="[[slots]]" as="item" grid selected-items="{{selectedSlot}}" selection-enabled>
                 <template>
                   <span class$="[[_computedClass(selected)]]">
-                    <span class="timeslot-content">    [[slotText(item.time_description)]]                </span>
+                    <span class="timeslot-content">
+                      [[slotText(item.time_description)]]
+                    </span>
                   </span>
                 </template>
               </iron-list>
@@ -227,26 +230,40 @@
       <div class="webwidget-page" id="client-fields">
         <iron-pages selected="[[selectedField]]">
           <div class="webwidget-page" id="fio-fields">
-            <div class="webwidget-body">
-              <paper-input label="Фамилия" value="{{clientSurname}}"></paper-input>
-              <paper-input label="Имя" value="{{clientName}}"></paper-input>
-              <paper-input label="Отчество" vakue="{{clientPatronymic}}"></paper-input>
+            <div id="other-fields" class="webwidget-body">
+              <template is="dom-repeat" items="[[fieldsModel]]" filter="otherFields">
+                <paper-input
+                  char-counter
+                  class="custom-field"
+                  label="[[item.description]]"
+                  on-keyup="fieldChanged"
+                  value="[[item.default]]"
+                  maxlength="[[computeLength(item,'max')]]"
+                  error-message="Поле заполнено не верно"
+                  auto-validate
+                  max="[[computeValue(item,'max')]]"
+                  min="[[computeValue(item,'min')]]"
+                  type="[[computeType(item)]]"
+                  required="[[item.required]]"
+                  pattern="[[computePattern(item)]]"
+                  minlength="[[computeLength(item,'min')]]"></paper-input>
+              </template>
             </div>
 
             <div class="webwidget-actions">
               <paper-button on-tap="previousPage">Назад</paper-button>
-              <paper-button disabled$="[[canNextField(clientSurname)]]" on-tap="nextField">Далее</paper-button>
+              <paper-button disabled$="[[!validInput]]" on-tap="nextField">Далее</paper-button>
             </div>
           </div>
 
           <div class="webwidget-page" id="captcha">
             <div class="webwidget-body">
-              <re-captcha id="captcha-widget" sitekey="6LceSiITAAAAAMroOv8D8KjDqlpfwCjQBtLj9xQA" response="{{captchaResponse}}"></re-captcha>
+              <re-captcha id="captcha-widget" sitekey="[[captchaKey]]" response="{{captchaResponse}}"></re-captcha>
             </div>
             <div class="webwidget-actions">
               <paper-button on-tap="previousField">Назад</paper-button>
               <!-- disabled$="[[canNextPage(captchaResponse)]]" -->
-              <paper-button on-tap="nextPage">Завершить</paper-button>
+              <paper-button on-tap="nextPage" disabled$="[[canNextPage(captchaResponse)]]">Завершить</paper-button>
             </div>
           </div>
         </iron-pages>
@@ -256,14 +273,41 @@
 
     <div hidden$="[[!ticketInfoVisible]]" class="webwidget-page" id="info">
       <div class="webwidget-body">
-        <iris-ticketview ticket="[[ticket]]"></iris-ticketview>
+        <iris-ticketview hidden$="[[errorInfoVisible]]" ticket="[[ticket]]"></iris-ticketview>
+        <div hidden$="[[!errorInfoVisible]]">
+          [[errorText]]
+        </div>
       </div>
       <div class="webwidget-actions">
         <paper-button raised on-tap="final">Ок</paper-button>
       </div>
     </div>
+
   </template>
   <script>
+    let messages = {
+      'error-no-service-prebook': {
+        icon: 'icons:info-outline',
+        title: 'Извините',
+        text: 'Нет доступного времени записи'
+      },
+      'error-no-slot-prebook': {
+        icon: 'icons:info-outline',
+        title: 'Извините',
+        text: 'На выбранное вами время талонов больше нет'
+      },
+      'error-unknown': {
+        icon: 'highlight-off',
+        title: 'Ошибка',
+        text: 'Внутренняя ошибка'
+      },
+      "error-bad-field": {
+        icon: 'icons:info-outline',
+        title: 'Извините',
+        text: 'Лимит услуг по полю <%= field_name %> исчерпан'
+      }
+    };
+
     Polymer({
       is: 'iris-webwidget',
       properties: {
@@ -275,11 +319,115 @@
           computed: '_computeFieldsEditorVisibility(loading,ticketInfoVisible)'
         }
       },
+      observers: [
+        'validateFields(ticketQuery.*)', 'getCaptcha(captchaResponse)'
+      ],
+      getCaptcha(captchaResponse) {
+        (!!captchaResponse) && this.nextPage();
+      },
+      validateFields() {
+        _.forEach(this.$["other-fields"].querySelectorAll('input'), (input) => {
+          let maxlength = input.getAttribute('maxlength');
+          if (maxlength) {
+            input.setAttribute('maxlength', false);
+            input.setAttribute('maxlength', maxlength);
+          }
+        });
+
+        let fields = this.$["other-fields"].querySelectorAll('.custom-field');
+        let validation_result = true;
+
+        _.forEach(fields, (field, index) => {
+          validation_result = field.validate();
+          return validation_result;
+        });
+
+        this.set('validInput', validation_result);
+      },
+      createPrivateFields(fields, fields_model) {
+        let copy = _.cloneDeep(fields);
+        this.private_fields = {};
+
+        _.forEach(fields_model, (model, key) => {
+          let name = model.key || key;
+          let is_private = !!model.private;
+          if (!is_private)
+            return true;
+
+          let value = copy[name];
+          let hash = md5(value);
+          this.private_fields[name] = value;
+          copy[name] = hash;
+        });
+
+        return copy;
+      },
       getLayouts() {
         let items = this.$.visibleOffices.items;
         this.terminal_id = items[this.selectedOffice].id;
 
-        return IRIS.webwidget.getTerminalLayout(this.terminal_id).then(d => this.services = d.base.root.content);
+        return IRIS.webwidget.getTerminalLayout(this.terminal_id).then(d => {
+          this.services = d.base.root.content;
+          return IRIS.webwidget.getTerminalFields(this.terminal_id)
+        }).then(d => {
+          let result = _.map(d.workstation.custom_fields, (field, key) => {
+            field.key = key;
+            return field;
+          });
+          this.fieldsModel = result;
+          this.service_count = _.find(d.fields_model, model => model.method == "prebook" && model.key == "service_count");
+          this.serviceCount = this.service_count.default || 1;
+          console.log(this.service_count);
+        });
+      },
+      otherFields(item) {
+        return item.type != "date-picker";
+      },
+      fieldChanged(e) {
+        let item = e.model.item;
+        let key = item.key;
+
+        this.set('ticketQuery.' + key, e.target.value);
+      },
+      computePattern(item) {
+        let len = this.computeLength(item);
+
+        let mult = !len
+          ? "*"
+          : `{${len}}`;
+
+        return item.layout == 'numeric'
+          ? '[0-9]' + mult
+          : undefined;
+      },
+      computeType(item) {
+
+        return item.type == "input-number"
+          ? 'number'
+          : 'text';
+      },
+      computeValue(item, direction) {
+        if (item[direction + '-value']) {
+          return parseInt(item[direction + '-value'], 10);
+        }
+
+        if (direction == "min" && item.type == "input-number")
+          return 1;
+
+        return undefined;
+      },
+      computeLength(item, direction) {
+        if (!!item.mask) {
+          return _.sumBy(item.mask, i => i == '*'
+            ? 1
+            : 0);
+        }
+
+        if (!!item.length) {
+          return item.length;
+        }
+
+        return undefined;
       },
       getAvailableDays() {
         let items = this.$.visibleServices.items;
@@ -292,17 +440,22 @@
         this.ticketQuery.service = items[this.selectedService].id;
         this.ticketQuery.service_count = this.serviceCount;
         this.ticketQuery.workstation = this.terminal_id;
-        this.ticketQuery.start = this.monthFromNow === 0 ? 0 : this.ticketQuery.end + 1;
-        this.ticketQuery.end = this.monthFromNow === 0 ? info.days_in_month - info.day : info.days_in_month + this.ticketQuery.end + 1;
+        this.ticketQuery.start = this.monthFromNow === 0
+          ? 0
+          : this.ticketQuery.end + 1;
+        this.ticketQuery.end = this.monthFromNow === 0
+          ? info.days_in_month - info.day
+          : info.days_in_month + this.ticketQuery.end + 1;
 
         return IRIS.webwidget.getAvailableDays(this.ticketQuery).then(data => this.processAvailableDays(data));
       },
       processAvailableDays(data) {
         this.isLastAvailable = !data.done;
         this.availableDays = _.reduce(data.days, (acc, day) => {
-          if (day.is_available) acc.push(day.date.slice(0, 10));
+          (day.is_available) && acc.push(day.date.slice(0, 10));
           return acc;
         }, []);
+
         this.dedicatedDate = null;
       },
       getSlots() {
@@ -312,16 +465,45 @@
           document.querySelector('iron-list').fire('iron-resize');
         });
       },
+      attachPrivateFields(data) {
+        _.forEach(this.private_fields, (value, name) => {
+          data.user_info[name] = value;
+        })
+
+        return data;
+      },
       storeAndConfirm() {
         this.ticketQuery.time_description = this.selectedSlot.time_description;
-        this.ticketQuery.client = {
-          name: this.clientSurname + " " + this.clientName + " " + this.clientPatronymic
-        };
-        this.ticketQuery.captcha_response = this.captchaResponse;
 
-        return IRIS.webwidget.confirmTicket(this.ticketQuery).then(d => {
-          this.ticket = d.ticket;
+        this.ticketQuery.captcha_response = this.captchaResponse;
+        let fields = this.createPrivateFields(this.ticketQuery, this.fieldsModel);
+
+        return IRIS.webwidget.confirmTicket(fields).then(response => {
           this.ticketInfoVisible = true;
+
+          if (response.success) {
+            this.set('ticket', this.attachPrivateFields(_.head(response.ticket)));
+
+          } else {
+            this.errorInfoVisible = true;
+
+            let text = "Невозможно зарегистрировать талон";
+            if (!response || !response.reason) {
+              text = messages["error-unknown"].text;
+            } else if (~ (response.reason || '').indexOf("User info validation failed")) {
+              let [,
+                name] = response.reason.split(': ');
+              let label = _.find(this.fieldsModel, ['key', name]).label;
+              let temp = _.template(messages["error-bad-field"].text);
+              text = temp({field_name: label});
+            } else if (response.reason == 'Failed to place a ticket.') {
+              text = messages["error-no-slot-prebook"].text;
+            } else if (response.reason == 'no service.') {
+              text = messages["error-no-service-prebook"].text;
+            }
+
+            this.set('errorText', text);
+          }
         });
       },
       ready() {
@@ -329,7 +511,7 @@
           this.webterminals = _.values(d);
           this.loading = false;
         });
-
+        this.captchaKey = window.captchaKey;
         this.reset();
         this.steps = ['Офис', 'Услуга', 'Дата и время', 'Дополнительные поля'];
         this.states = Array(this.steps.length);
@@ -350,9 +532,14 @@
         this.selectedField = 0;
         this.selectedServiceField = 0;
         this.selectedDateField = 0;
+        this.validInput = false;
         this.ticketInfoVisible = false;
+        this.errorInfoVisible = false;
         this.$["captcha-widget"].isWidgetLoaded() && this.$["captcha-widget"].reset();
         this.$.picker.selections = [];
+
+        this.dedicatedDate = null;
+        this.pirckerDate = moment().add(this.monthFromNow, 'month');
       },
       _computeFieldsEditorVisibility(loading, ticketInfoVisible) {
         return loading || ticketInfoVisible;
@@ -369,14 +556,18 @@
         return this.filterList(webterminals, ofilter);
       },
       filterList(webterminals, ofilter) {
-        if (!ofilter) return webterminals;
+        if (!ofilter)
+          return webterminals;
         let result = [];
-        webterminals.forEach(t => ~t.label.indexOf(ofilter) && result.push(t))
+        webterminals.forEach(t => ~ t.label.toLowerCase().indexOf(ofilter.toLowerCase()) && result.push(t))
         return result;
       },
       doAction(actionset, step) {
-        let action = _.isArray(actionset) ? actionset[step] : actionset;
-        if (!action) return false;
+        let action = _.isArray(actionset)
+          ? actionset[step]
+          : actionset;
+        if (!action)
+          return false;
 
         this.loading = true;
         return this[action]().then(d => this.loading = false);
@@ -414,16 +605,10 @@
         let day = now.format('D');
         let days_in_month = new Date(year, month, 0).getDate();
 
-        return {
-          now,
-          days_in_month,
-          day,
-          year,
-          month
-        };
+        return {now, days_in_month, day, year, month};
       },
       slotText(desc) {
-        let ts = _.map(desc, t => _.padStart(((t / 3600) | 0), 2, '0') + ':' + _.padStart((t % 3600) / 60, 2, '0'))
+        let ts = _.map(desc, t => _.padStart(_.floor((t / 3600) | 0), 2, '0') + ':' + _.padStart(_.floor((t % 3600) / 60), 2, '0'));
         return ts.join(' - ');
       },
       previousField() {
@@ -432,9 +617,7 @@
       canNextPage(value) {
         return _.isUndefined(value) || value === null;
       },
-      canPrevPage(value) {
-
-      },
+      canPrevPage(value) {},
       canNextField(value) {
         return _.isUndefined(value) || value === null || value === '';
       },

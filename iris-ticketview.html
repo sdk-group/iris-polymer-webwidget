@@ -28,6 +28,7 @@
         font-size: 22px;
         padding: 10px 0;
       }
+
     </style>
     <div id="title">
       Талон успешно зарегистрирован
@@ -36,7 +37,8 @@
       <div>
         Пин­-код:
       </div>
-      <div id="code">[[ticket.code]] </div>
+      <div id="code">[[ticket.code]]
+      </div>
       <div>Талон предварительной записи</div>
       <div>Необходима регистрация по пин­коду на</div>
       <div>терминале в день приема, ждем вас!</div>
@@ -65,11 +67,12 @@
         return moment(value).format('D MMMM YYYY');
       },
       timeToString(ticket) {
-        if (!ticket.time_description) return '';
+        if (!ticket.time_description)
+          return '';
         return this.secToTime(ticket.time_description[0])
       },
       secToTime(t) {
-        return _.padStart(((t / 3600) | 0), 2, '0') + ':' + _.padStart((t % 3600) / 60, 2, '0');
+        return _.padStart(_.floor((t / 3600) | 0), 2, '0') + ':' + _.padStart(_.floor((t % 3600) / 60), 2, '0');
       }
     });
   </script>
